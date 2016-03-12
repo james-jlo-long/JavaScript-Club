@@ -80,7 +80,6 @@
 
         <p>What does this do?</p>
         <pre><code>function jloFunction() {
-    var elements = Array.prototype.slice.call(arguments);
     var parents = [];
     var eRents = [];
     var common = [];
@@ -88,11 +87,11 @@
     var i = 0;
     var j = 1;
     var k = 0;
-    while (i < elements.length) {
+    while (i < arguments.length) {
         eRents = [];
-        while (elements[i]) {
-            eRents.push(elements[i]);
-            elements[i] = elements[i].parentNode;
+        while (arguments[i]) {
+            eRents.push(arguments[i]);
+            arguments[i] = arguments[i].parentNode;
         }
         parents.push(eRents);
         i += 1;
@@ -647,7 +646,7 @@ a(); // -> undefined</code></pre>
         <ol>
             <li>A function should do one thing.</li>
             <li>Comment like you're being paid for it.</li>
-            <li>Don't repeat yourself.</li>
+            <li>Don't repeat yourself (stay DRY).</li>
             <li>Code that looks like a bug will hide real bugs.</li>
         </ol>
 
