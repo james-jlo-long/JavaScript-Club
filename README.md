@@ -23,7 +23,7 @@ copy - it will be far more up-to-date.
 The JavaScript Club files and lessons are licensed under the MIT License.
 A very brief summary of the license can be found at [tl;dr
 Legal](https://tldrlegal.com/license/mit-license) and full details can be found
-in LICENSE.md.
+in LICENSE.txt.
 
 Files that are **excluded** from this license are the deck.js files (located in
 the "deck" folder). At time of writing, these files are also licensed under MIT
