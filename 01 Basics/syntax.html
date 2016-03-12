@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Testing SyntaxErrors</title>
+
+<script>
+function to2dp(a) {
+
+    var b;
+
+    if (b = parseFloat(a)) {
+        return b.toFixed(2);
+    } else {
+        return (0).toFixed(2);
+    }
+
+}
+
+function one(x) {
+
+    var y = 1;
+
+    if (x)
+        x *= 2;
+        y *= 2; // out of block
+
+    return x + y;
+
+}
+
+// bitwise
+
+function a(b) {
+
+    var c;
+
+    if (a & 2) {
+        c = 3;
+    } else {
+        c = 4;
+    }
+
+    return c;
+
+}
+
+a(1); // -> 4
+
+// order of operations
+
+0 && 1 || 2 ? 3 : 4   // -> 3
+(0 && 1) || 2 ? 3 : 4 // -> 3
+0 && (1 || 2) ? 3 : 4 // -> 4
+0 && 1 || (2 ? 3 : 4) // -> 3
+
+
+</script>
+
+</head>
+<body>
+
+<p>Check the console.</p>
+
+</body>
+</html>

@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=1024, user-scalable=no">
+
+<title>Basics</title>
+
+<!-- Required stylesheet -->
+<link rel="stylesheet" media="screen" href="../deck/core/deck.core.css">
+
+<!-- Extension CSS files go here. Remove or add as needed. -->
+<link rel="stylesheet" media="screen" href="../deck/extensions/goto/deck.goto.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/menu/deck.menu.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/navigation/deck.navigation.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/status/deck.status.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/scale/deck.scale.css">
+
+<!-- Style theme. More available in /themes/style/ or create your own. -->
+<link rel="stylesheet" media="screen" href="../deck/themes/style/web-2.0.css">
+
+<!-- Transition theme. More available in /themes/transition/ or create your own. -->
+<link rel="stylesheet" media="screen" href="../deck/themes/transition/horizontal-slide.css">
+
+<!-- Basic black and white print styles -->
+<link rel="stylesheet" media="print" href="../deck/core/print.css">
+
+<!-- Required Modernizr file -->
+<script src="../deck/modernizr.custom.js"></script>
+
+<style>
+.center { text-align: center; }
+</style>
+
+</head>
+<body>
+<div class="deck-container">
+
+    <section class="slide">
+        <h1>JavaScript Club</h1>
+    </section>
+
+    <section class="slide center">
+        <h2>Introduction</h2>
+        <div class="slide">
+            <p><img src="jlo.png" alt="me"></p>
+            <p>James "JLo" Long</p>
+        </div>
+        <p class="slide">Joined Xigen at the end of 2009.</p>
+        <p class="slide">Part of the e-team.</p>
+        <div class="slide">
+            <p><img src="github-logo.svg" alt="GitHub"></p>
+            <p><a href="https://github.com/james-jlo-long">github.com/james-jlo-long</a></p>
+        </div>
+
+    </section>
+
+    <section class="slide">
+        <h1>Basics</h1>
+    </section>
+
+    <section class="slide">
+        <h1>How to Program</h1>
+    </section>
+
+    <section class="slide">
+        <h1>1. A Function Should Do One Thing</h1>
+    </section>
+
+    <section class="slide">
+        <h2>Why?</h2>
+        <p class="slide">Functions are easier to understand.</p>
+        <p class="slide">Functions are easier to name.</p>
+        <p class="slide">Functions are re-usable.</p>
+    </section>
+
+    <section class="slide">
+
+        <p>What does this do?</p>
+        <pre><code>function jloFunction() {
+    var elements = Array.prototype.slice.call(arguments);
+    var parents = [];
+    var eRents = [];
+    var common = [];
+    var exists = true;
+    var i = 0;
+    var j = 1;
+    var k = 0;
+    while (i < elements.length) {
+        eRents = [];
+        while (elements[i]) {
+            eRents.push(elements[i]);
+            elements[i] = elements[i].parentNode;
+        }
+        parents.push(eRents);
+        i += 1;
+    }
+    if (parents.length) {
+        while (j < parents[0].length) {
+            k = 0;
+            exists = true;
+            while (k < parents.length) {
+                if (parents[k].indexOf(parents[0][j]) < 0) {
+                    exists = false;
+                    break;
+                }
+            }
+            if (exists) {
+                common.push(parents[0][j]);
+            }
+        }
+    }
+    return common[0];
+}</code></pre>
+
+        <p class="slide">It takes any number of elements, gets their parent elements, filters them so only elements that appear in every list are counted and returns the first one.</p>
+
+    </section>
+
+    <section class="slide">
+        <p>Compare the previous slide to this one:</p>
+        <pre><code>function toArray(arrayLike) {
+    return Array.prototype.slice.call(arrayLike);
+}
+
+function getParents(element) {
+
+    var parents = [];
+
+    while (element) {
+
+        parents.push(element);
+        element = element.parentNode;
+
+    }
+
+    return parents;
+
+}
+
+function arrayCommon(array1) {
+
+    var arrays = toArray(arguments).slice(1);
+
+    return arrays.reduce(function (prevArray, currArray) {
+
+        return prevArray.filter(function (entry) {
+            return currArray.indexOf(entry) > -1;
+        });
+
+    }, array1);
+
+}
+
+function getCommonAncestor() { // jloFunction
+
+    var elements = toArray(arguments);
+    var parents = elements.map(getParents);
+    var common = arrayCommon.apply(undefined, parents);
+
+    return common[0];
+
+}</code></pre>
+
+        <p class="slide">Isn't that easier to follow?</p>
+
+    </section>
+
+    <section class="slide">
+        <p>Now that we have simple functions, we can find improvements:</p>
+        <pre><code>function toArray(arrayLike) {
+    return Array.prototype.slice.call(arrayLike);
+}
+
+function getParents(element) {
+
+    var parents = [];
+
+    while (element instanceof HTMLElement) {
+
+        parents.push(element);
+        element = element.parentNode;
+
+    }
+
+    return parents;
+
+}
+
+function arrayCommon(array1) {
+
+    var arrays = toArray(arguments).slice(1);
+
+    return arrays.reduce(function (prevArray, currArray) {
+
+        var current = toArray(currArray);
+
+        return prevArray.filter(function (entry) {
+            return current.indexOf(entry) > -1;
+        });
+
+    }, toArray(array1));
+
+}
+
+function getCommonAncestor() { // jloFunction
+
+    var elements = toArray(arguments);
+    var parents = elements.map(getParents);
+    var common = arrayCommon.apply(undefined, parents);
+
+    return common[0];
+
+}</code></pre>
+
+    </section>
+
+    <section class="slide">
+        <h1>2. Comment</h1>
+    </section>
+
+    <section class="slide">
+        <h1>2. Comment Liberally</h1>
+    </section>
+
+    <section class="slide">
+        <h1>2. Comment Regularly</h1>
+    </section>
+
+    <section class="slide">
+        <h1>2. Comment Like You're Being Paid For It</h1>
+    </section>
+
+    <section class="slide">
+
+        <p>Comment every single function you write. The comment should include:</p>
+        <p class="slide">What the function takes (if anything).</p>
+        <p class="slide">What the function returns (if anything).</p>
+        <p class="slide">What the function does.</p>
+        <p class="slide">How the function works (examples, please).</p>
+        <p class="slide">Why I should use the function.</p>
+        <p class="slide">This is easier than it sounds. Find a documenter you like and use it.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>JSDoc</h2>
+
+        <pre class="slide"><code>/**
+ * Converts a string to be in uppercase.
+ *
+ * @param  {String} string String to convert.
+ * @return {String}        Converted string.
+ */
+function toUpper(string) {
+    return String(string).toUpperCase();
+}
+
+/**
+ * Converts the first letter of a string to upper case. If
+ * lowerOthers is passed, the rest of the string is
+ * converted into lower case.
+ *
+ * @param  {String}   string      String to convert.
+ * @param  {?Boolean} lowerOthers Optional flag to lower
+ *                                other letters.
+ * @return {String}               Converted string.
+ */
+function toUpperFirst(string, lowerOthers) {
+
+    var str = String(string);
+    var first = str.charAt(0).toUpperCase();
+    var others = str.slice(1);
+
+    if (lowerOthers) {
+        others = others.toLowerCase();
+    }
+
+    return first + others;
+
+}</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Advantages</h2>
+
+        <ul>
+            <li class="slide">Easy to read and remember.</li>
+            <li class="slide">Versions exist for most languages.</li>
+            <li class="slide">Plugins can automatically generate a boilerplate for you.</li>
+            <li class="slide">IDEs can read the comments and give you code hints as you type.</li>
+        </ul>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>NDoc</h2>
+
+        <pre class="slide"><code>/**
+ *  toUpper(string) -> String
+ *  - string (String): String to convert.
+ *
+ *  Converts a string to uppercase.
+ *
+ *      toUpper("hello"); // -> "HELLO"
+ *
+ **/
+function toUpper(string) {
+    return String(string).toUpperCase();
+}
+
+/**
+ *  toUpperFirst(string[, lowerOthers = false]) -> String
+ *  - string (String): String to convert.
+ *  - lowerOthers (Boolean): Optional flag to lower-case
+ *    other letters.
+ *
+ *  Converts the given string so that the first letter is
+ *  in upper case.
+ *
+ *      toUpperFirst("hello"); // -> "Hello"
+ *      toUpperFirst("HELLO"); // -> "HELLO"
+ *      toUpperFirst("hElLo"); // -> "HElLo"
+ *
+ *  If `lowerOthers` is set to `true`, the rest of the
+ *  string is converted into lowercase.
+ *
+ *      toUpperFirst("hello", true); // -> "Hello"
+ *      toUpperFirst("HELLO", true); // -> "Hello"
+ *      toUpperFirst("hElLo", true); // -> "Hello"
+ *
+ **/
+function toUpperFirst(string, lowerOthers) {
+
+    var str = String(string);
+    var first = str.charAt(0).toUpperCase();
+    var others = str.slice(1);
+
+    if (lowerOthers) {
+        others = others.toLowerCase();
+    }
+
+    return first + others;
+
+}</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Advantages</h2>
+
+        <ul>
+            <li class="slide">Human-readable.</li>
+            <li class="slide">Easier to show examples.</li>
+            <li class="slide">Easier to show optional arguments.</li>
+            <li class="slide">Functions can have multiple signatures.</li>
+            <li class="slide">Functions can be <code>related to</code> or <code>alias of</code>.</li>
+        </ul>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Find a style you like <strong>and use it</strong>.</p>
+        <div class="slide">
+            <p>If you find yourself using any of these words when you describe your function, you may have more than one function - consider refactoring.</p>
+            <ul>
+                <li>and</li>
+                <li>but</li>
+                <li>also</li>
+                <li>sometimes</li>
+                <li>can</li>
+                <li>maybe</li>
+            </ul>
+        </div>
+
+    </section>
+
+    <section class="slide">
+        <h1>3. Don't Repeat Yourself</h1>
+    </section>
+
+    <section class="slide">
+
+        <p>Whenever you have the same functionality used multiple times, put it in a function.</p>
+        <p class="slide">This is faster to write.</p>
+        <p class="slide">Since there are fewer lines, it's easier to read ...</p>
+        <p class="slide">... it's also easier to debug.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <pre class="slide"><code>function randFloat(min, max) {
+
+    var absMin = Math.abs(min) || 0;
+    var absMax = Math.abs(max) || 0;
+    var minimum = Math.max(absMin, absMax);
+    var maximum = Math.min(absMin, absMax);
+
+    return minimim + Math.random() * (maximum - minimum);
+
+}
+
+function randInt(min, max) {
+
+    var absMin = Math.abs(min) || 0;
+    var absMax = Math.abs(max) || 0;
+    var minimum = Math.max(absMin, absMax);
+    var maximum = Math.min(absMin, absMax);
+
+    return Math.floor(
+        minimim + Math.random() * (maximum - minimum)
+    );
+
+}</code></pre>
+
+        <pre class="slide"><code>function toPosNumber(number) {
+    return Math.abs(number) || 0;
+}
+
+function randFloat(min, max) {
+
+    var absMin = toPosNumber(min);
+    var absMax = toPosNumber(max);
+    var minimum = Math.max(absMin, absMax);
+    var maximum = Math.min(absMin, absMax);
+
+    return minimim + Math.random() * (maximum - minimum);
+
+}
+
+function randInt(min, max) {
+    return Math.floor(randFloat(min, max));
+}</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <pre><code>function toPosNumber(number) {
+    return Math.abs(number) || 0;
+}
+
+function randFloat(min, max) {
+
+    var absMin = toPosNumber(min);
+    var absMax = toPosNumber(max);
+    var minimum = Math.min(absMin, absMax); // oops
+    var maximum = Math.max(absMin, absMax); // oops, again
+
+    return minimim + Math.random() * (maximum - minimum);
+
+}
+
+function randInt(min, max) {
+    return Math.floor(randFloat(min, max));
+}</code></pre>
+
+    </section>
+
+    <section class="slide">
+        <h1>4. Code that looks like a bug can hide real bugs</h1>
+    </section>
+
+    <section class="slide">
+
+        <p>Where is the <code>SyntaxError</code>?</p>
+
+        <pre><code>function to2dp(a) {
+
+    var b;
+
+    if (b = parseFloat(a)) {
+        return b.toFixed(2);
+    } else {
+        return 0.toFixed(2);
+    }
+
+}</code></pre>
+
+        <div class="slide">
+            <p>All better now</p>
+            <pre><code>function to2dp(a) {
+
+    var b;
+
+    if (b = parseFloat(a)) {
+        return b.toFixed(2);
+    } else {
+        return (0).toFixed(2);
+    }
+
+}</code></pre>
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>What does this function return?</p>
+
+        <pre><code>function a(b) {
+
+    var c = 1;
+
+    if (b) b *= 2; c *= 2;
+
+    return b + c;
+
+}
+a(0); // -> ?</code></pre>
+
+        <div class="slide">
+            <p>JavaScript sees this:</p>
+            <pre><code>function a(b) {
+
+    var c = 1;
+
+    if (b) {
+        b *= 2;
+    }
+
+    c *= 2;
+
+    return b + c;
+
+}
+a(0); // -> 2</code></pre>
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>What does this function return?</p>
+
+        <pre><code>function a(b) {
+
+    var c;
+
+    if (a & 2) {
+        c = 3;
+    } else {
+        c = 4;
+    }
+
+    return c;
+
+}
+
+a(1); // -> ?</code></pre>
+
+        <p class="slide"><code>a(1) === 4</code></p>
+
+        <div class="slide">
+            <p>Beware of this:</p>
+            <pre><code>function a(b) {
+
+    var c;
+
+    if (a && 2) { // There, I fixed it!
+        c = 3;
+    } else {
+        c = 4;
+    }
+
+    return c;
+
+}
+
+a(1); // -> 3</code></pre>
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Which returns the largest value?</p>
+        <pre><code>var a = 0 && 1 || 2 ? 3 : 4;
+var b = (0 && 1) || 2 ? 3 : 4;
+var c = 0 && (1 || 2) ? 3 : 4;
+var d = 0 && 1 || (2 ? 3 : 4);</code></pre>
+
+        <pre class="slide"><code>var a = 0 && 1 || 2 ? 3 : 4;   // -> 3
+var b = (0 && 1) || 2 ? 3 : 4; // -> 3
+var c = 0 && (1 || 2) ? 3 : 4; // -> 4
+var d = 0 && 1 || (2 ? 3 : 4); // -> 3</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <p>What does this function return?</p>
+        <pre><code>function a() {
+
+    return
+    {
+        foo: true
+    };
+
+}
+
+a(); // -> ?</code></pre>
+
+        <div class="slide">
+            <p>JavaScript has semi-colon insertion and the ability to return early. Believe it or not, JavaScript converts the function into this:</p>
+            <pre><code>function a() {
+
+    return;
+    {
+        foo: true;
+    }
+
+}
+
+a(); // -> undefined</code></pre>
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Protect yourself and others from these bugs.</p>
+        <p class="slide"><a href="http://www.jslint.com">JSLint</a> will warn for all of these and find other bugs.</p>
+        <p class="slide"><a href="http://www.jshint.com">JSHint</a> will let some of them through by default.</p>
+        <blockquote class="slide">
+            <p>JSHint is for cowards, the ignorant and people who got their feelings hurt.</p>
+            <cite>JLo</cite>
+        </blockquote>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>How to program</h2>
+
+        <p>Always remember these four points and you will be a better programmer:</p>
+
+        <ol>
+            <li>A function should do one thing.</li>
+            <li>Comment like you're being paid for it.</li>
+            <li>Don't repeat yourself.</li>
+            <li>Code that looks like a bug will hide real bugs.</li>
+        </ol>
+
+    </section>
+
+    <section class="slide">
+        <h1>Any questions?</h1>
+    </section>
+
+    <!-- deck.navigation snippet -->
+    <div aria-role="navigation">
+        <a href="#" class="deck-prev-link" title="Previous">&#8592;</a>
+        <a href="#" class="deck-next-link" title="Next">&#8594;</a>
+    </div>
+
+    <!-- deck.status snippet -->
+    <p class="deck-status" aria-role="status">
+        <span class="deck-status-current"></span>
+        /
+        <span class="deck-status-total"></span>
+    </p>
+
+    <!-- deck.goto snippet -->
+    <form action="." method="get" class="goto-form">
+        <label for="goto-slide">Go to slide:</label>
+        <input type="text" name="slidenum" id="goto-slide" list="goto-datalist">
+        <datalist id="goto-datalist"></datalist>
+        <input type="submit" value="Go">
+    </form>
+
+    <!-- End extension snippets. -->
+</div>
+
+<!-- Required JS files. -->
+<script src="../deck/jquery.min.js"></script>
+<script src="../deck/core/deck.core.js"></script>
+
+<!-- Extension JS files. Add or remove as needed. -->
+<script src="../deck/extensions/menu/deck.menu.js"></script>
+<script src="../deck/extensions/goto/deck.goto.js"></script>
+<script src="../deck/extensions/status/deck.status.js"></script>
+<script src="../deck/extensions/navigation/deck.navigation.js"></script>
+<script src="../deck/extensions/scale/deck.scale.js"></script>
+
+<!-- Initialize the deck. You can put this in an external file if desired. -->
+<script>
+$(function() {
+    $.deck('.slide');
+});
+</script>
+</body>
+</html>
