@@ -27,6 +27,6 @@ in LICENSE.txt.
 
 Files that are **excluded** from this license are the deck.js files (located in
 the "deck" folder). At time of writing, these files are also licensed under MIT
-but the [deck.js GitHub repository](https://github.com/imakewebthings/deck.js/)
-should be checked for clarification as I do not own the copyright to that
-software.
+(license file included in the "deck" folder) but the [deck.js GitHub
+repository](https://github.com/imakewebthings/deck.js/) should be checked for
+clarification as I do not own the copyright to that software.
