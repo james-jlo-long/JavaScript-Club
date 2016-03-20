@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=1024, user-scalable=no">
+
+<title>Scope</title>
+
+<!-- Required stylesheet -->
+<link rel="stylesheet" media="screen" href="../deck/core/deck.core.css">
+
+<!-- Extension CSS files go here. Remove or add as needed. -->
+<link rel="stylesheet" media="screen" href="../deck/extensions/goto/deck.goto.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/menu/deck.menu.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/navigation/deck.navigation.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/status/deck.status.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/scale/deck.scale.css">
+
+<!-- Style theme. More available in /themes/style/ or create your own. -->
+<link rel="stylesheet" media="screen" href="../deck/themes/style/web-2.0.css">
+
+<!-- Transition theme. More available in /themes/transition/ or create your own. -->
+<link rel="stylesheet" media="screen" href="../deck/themes/transition/horizontal-slide.css">
+
+<!-- Basic black and white print styles -->
+<link rel="stylesheet" media="print" href="../deck/core/print.css">
+
+<!-- Required Modernizr file -->
+<script src="../deck/modernizr.custom.js"></script>
+
+<style>
+.center { text-align: center; }
+</style>
+
+<script>
+// The second gotcha.
+document.addEventListener("DOMContentLoaded", function () {
+
+    "use strict";
+
+    var buttons = document.getElementById("buttons1");
+
+    for (var i = 0; i < 5; i += 1) {
+
+        var button = document.createElement("button");
+        button.textContent = "Button " + i;
+        button.onclick = function () {
+            alert(i);
+        };
+        buttons.appendChild(button);
+
+    }
+
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    "use strict";
+
+    var buttons = document.getElementById("buttons2");
+
+    for (var i = 0; i < 5; i += 1) {
+        (function (j) {
+
+            var button = document.createElement("button");
+            button.textContent = "Button " + j;
+            button.onclick = function () {
+                alert(j);
+            };
+            buttons.appendChild(button);
+
+        }(i));
+    }
+
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    "use strict";
+
+    var buttons = document.getElementById("buttons3");
+
+    for (var i = 0; i < 5; i += 1) {
+
+        var button = document.createElement("button");
+        button.textContent = "Button " + i;
+        button.dataset.i = i;
+        button.onclick = function () {
+            alert(this.dataset.i);
+        };
+        buttons.appendChild(button);
+
+    }
+
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    "use strict";
+
+    var buttons = document.getElementById("buttons4");
+
+    buttons.addEventListener("click", function (e) {
+
+        if (e.target.matches("button")) {
+            alert(e.target.dataset.i);
+        }
+
+    });
+
+    for (var i = 0; i < 5; i += 1) {
+
+        var button = document.createElement("button");
+        button.textContent = "Button " + i;
+        button.dataset.i = i;
+        buttons.appendChild(button);
+
+    }
+
+});
+</script>
+
+</head>
+<body>
+<div class="deck-container">
+
+    <section class="slide">
+        <h1>Scope</h1>
+    </section>
+
+    <!--
+    How scope works
+        "outer" scope and "inner" scope
+    Global scope
+        avoid because too easy to override
+        accidental globals
+    var
+        function scope
+        multivar
+        variable hoisting
+            (function () { console.log("foo is %o", foo); var foo = 1; }()); // undefined
+            for (var i = 0, il = buttons.length; i < il; i += 1) { buttons[i].onclick = function () {}; }
+    let
+        block scope
+        temporal dead zone
+            (function () { console.log("foo is %o", foo); let foo = 1; }()); // ReferenceError
+            (function () { let one; let one; }()); // TypeError "reclaration of let one"
+        const = unchangable let
+            (function () { const a = "alpha"; a = "bravo"; }()); // SyntaxError "invalid assignment to const a"
+    scope containment
+        (function () {}()) contains both
+        {} contains let
+    -->
+
+    <section class="slide">
+
+        <h2>Scope in JavaScript</h2>
+
+        <p class="slide">Scope is how we describe the visibility of variables and their values in programming.</p>
+
+        <div class="slide">
+            <p>JavaScript has two scopes</p>
+            <ul>
+                <li>Function scope</li>
+                <li>Block scope</li>
+            </ul>
+        </div>
+
+        <p class="slide">The main difference is the containing structure for the scope.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>General Scope Visibility</h2>
+
+        <div class="slide">
+
+            <p>Generally, a variable is visible once it's been defined.</p>
+            <pre><code>var number = 1;
+console.log("The number is %d", number);
+// -> "The number is 1"</code></pre>
+
+        </div>
+
+        <div class="slide">
+
+            <p>A container can see its variables and any variables in the outer scope(s), but that does not work the other way around.</p>
+            <pre><code>var outer = 1;
+function logBoth() {
+    var inner = 2;
+    console.log("Outer = %d and inner = %d", outer, inner);
+    // -> "Outer = 1 and inner = 2"
+}
+console.log("Outer = %d and inner = %d", outer, inner);
+// -> ReferenceError: inner is not defined</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>This continues for all containers and only goes one way</p>
+
+        <pre><code>global    ┌──┐
+╒═════════│══│═════════╕
+│1     ┌──│  │──┐      │
+│╒═════│══│══│══│═════╕│
+││2 ┌──│  │  │  │──┐  ││
+││╒═│══│══│══│══│══│═╕││
+│││3╲  ╲  ╲  ╱  ╱  ╱ │││
+│││  ╲  ╲  ╲╱  ╱  ╱  │││
+│││   ╲  ╲    ╱  ╱   │││
+│││    ╲  ╲  ╱  ╱    │││
+│││     ╲  ╲╱  ╱     │││
+│││      ╲    ╱      │││
+│││       ╲  ╱       │││
+│││        ╲╱        │││
+│││                  │││
+││└──────────────────┘││
+│└────────────────────┘│
+└──────────────────────┘</code></pre>
+
+    <p class="slide">When trying to find the variable you request, JavaScript will work from the current scope up through all the layers until the <strong>global scope</strong>. If it still hasn't found the variable, it will throw a <code>ReferenceError</code>.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>The Global Scope</h2>
+
+        <div class="slide">
+
+            <p>There are two ways to create a global variable. Either create a variable outside a container or add a property to the <code>window</code> object.</p>
+            <pre><code>var one = 1;
+window.two = 2;
+console.log("one = %d and two = %d", one, two);
+// -> "one = 1 and two = 2"</code></pre>
+
+        </div>
+
+        <div class="slide">
+
+            <p>This means there are a couple of ways of detecting a global variable.</p>
+            <pre><code>var glob = true;
+if (typeof glob !== "undefined") { /* glob exists */  }
+if ("glob" in window) { /* glob exists */  }
+if (window.hasOwnProperty("glob")) { /* glob exists */  }</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>If you assign a value to a variable without declaring it, it will automatically create a global variable.</p>
+
+        <pre><code>function doSomething() {
+    accident = true;
+}
+function doSomethingElse() {
+    var myVar;
+    myvar = true; // oops - typo
+}
+doSomething();
+doSomethingElse();
+("accident" in window); // -> true
+("myvar" in window); // -> true</code></pre>
+
+        <div class="slide">
+
+            <p><strong>Strict mode</strong> will prevent that happening.</p>
+
+            <pre><code>function doSomething() {
+    "use strict";
+    accident = true;
+}
+function doSomethingElse() {
+    "use strict";
+    var myVar;
+    myvar = true; // oops - typo
+}
+doSomething();
+// ReferenceError: assignment to undeclared variable accident
+doSomethingElse();
+// ReferenceError: assignment to undeclared variable myvar
+("accident" in window); // -> false
+("myvar" in window); // -> false</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>You should always try to avoid relying on global variables.</p>
+
+        <ul>
+            <li class="slide">They're slower than local variables.</li>
+            <li class="slide">
+                <p>They're too easy to override.</p>
+                <pre><code>var myGlob = 0;
+
+function one() {
+    myGlob = 1;
+}
+
+function two() {
+    myGlob = 2;
+}
+
+console.log(myGlob); // logs 0
+one();
+console.log(myGlob); // logs 1
+two();
+console.log(myGlob); // logs 2</code></pre>
+            </li>
+        </ul>
+
+    </section>
+
+    <section class="slide">
+        <h1>Function scope</h1>
+    </section>
+
+    <section class="slide">
+
+        <p>Function scope is JavaScript's traditional scope. It's created with the <code>var</code> keyword.</p>
+
+        <pre><code>function doSomething() {
+    var funcScoped = true;
+}</code></pre>
+
+        <div class="slide">
+
+            <p>Variables can be created on a per-line basis, or you can combine multiple <code>var</code> statements.</p>
+
+            <pre><code>function perStatement() {
+    var one = 1;
+    var two = 2;
+    var three = 3;
+}
+
+function combinedStatement() {
+    var one = 1,
+        two = 2,
+        three = 3;
+}</code></pre>
+
+        </div>
+
+        <div class="slide">
+
+            <p>Use the per-line version - it avoids this bug:</p>
+
+            <pre><code>function combinedStatement() {
+    var one = 1,
+        two = 2;
+        three = 3;
+}
+
+combinedStatement();
+window.three; // -> 3</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Function-scoped variables are visible to the entire scope. JavaScript does this using a technique called "variable hoisting".</p>
+
+        <div class="slide">
+
+            <p>You write this:</p>
+
+            <pre><code>function doStuff() {
+    if (true) {
+        var one = 1;
+    }
+}</code></pre>
+
+            <p>JavaScript converts it to this:</p>
+
+            <pre><code>function doStuff() {
+    var one; // = undefined
+    if (true) {
+        one = 1;
+    }
+}</code></pre>
+
+            <p>This is why you should always declare your variables at the top of the function.</p>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Function hoisting can lead to two gotchas.</p>
+
+        <pre><code>if (!("myVar" in window)) {
+    var myVar = true;
+}
+
+console.log(myVar); // -> ?</code></pre>
+
+        <div class="slide">
+
+            <pre><code>var myVar;
+if (!("myVar" in window)) {
+    myVar = true;
+}
+
+console.log(myVar); // -> undefined</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>The second gotcha is far more subtle and incidious.</p>
+
+        <pre><code>for (var i = 0; i < 5; i += 1) {
+
+    var button = document.createElement("button");
+    button.textContent = "Button " + i;
+    button.onclick = function () {
+        alert(i);
+    };
+    document.body.appendChild(button);
+
+}</code></pre>
+
+        <div id="buttons1"></div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>JavaScript converted the script into this:</p>
+
+        <pre><code>// Scope 1
+var i;
+var button;
+
+for (i = 0; i < 5; i += 1) {
+
+    button = document.createElement("button");
+    button.textContent = "Button " + i;
+    button.onclick = function () {
+        // Scope 2
+        alert(i);
+    };
+    document.body.appendChild(button);
+
+}</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <p>There are 3 possible solutions.</p>
+
+        <p>Use a closure</p>
+
+        <pre><code>// Scope 1
+for (var i = 0; i < 5; i += 1) {
+    (function (j) {
+
+        // Scope 2
+        var button = document.createElement("button");
+        button.textContent = "Button " + j;
+        button.onclick = function () {
+            // Scope 3
+            alert(j);
+        };
+        document.body.appendChild(button);
+
+    }(i));
+}</code></pre>
+
+        <div id="buttons2"></div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Use an attribute or the <code>dataset</code></p>
+
+        <pre><code>for (var i = 0; i < 5; i += 1) {
+
+    var button = document.createElement("button");
+    button.textContent = "Button " + i;
+    button.dataset.i = i;
+    button.onclick = function () {
+        alert(this.dataset.i);
+    };
+    buttons.appendChild(button);
+
+}</code></pre>
+
+        <div id="buttons3"></div>
+
+        <p><small>I'll explain more about <code>this</code> in the next lesson - for now, just realise that it refers to the button we're clicking on, not the <code>button</code> variable.</small></p>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Delegate your events (more about that in a future lesson).</p>
+
+        <pre><code>document.body.addEventListener("click", function (e) {
+
+    if (e.target.matches("button")) {
+        alert(e.target.dataset.i);
+    }
+
+});
+
+for (var i = 0; i < 5; i += 1) {
+
+    var button = document.createElement("button");
+    button.textContent = "Button " + i;
+    button.dataset.i = i;
+    document.body.appendChild(button);
+
+}</code></pre>
+
+        <div id="buttons4"></div>
+
+        <p><small>I'll explain more about event delegation in lesson 4 - for now, just realise that it's a way of getting a parent element to listen to a child element's events.</small></p>
+
+    </section>
+
+    <section class="slide">
+        <h1>Block Scope</h1>
+    </section>
+
+    <section class="slide">
+
+        <p>Block scope exists because people weren't smart enough to learn the solution to that <code>for</code> bug I showed you ...</p>
+        <p class="slide">... or possibly so people can compile from C# into JavaScript, which gets converted into C++ behind the scenes ... JavaScript is weird!</p>
+        <p class="slide">The main difference is that the container is now a block (<code>{ ... }</code>) instead of having to be a <code>function</code>.</p>
+
+        <div class="slide">
+
+            <p>You create it with <code>let</code> and it looks very similar to <code>var</code>.</p>
+
+            <pre><code>function perStatement() {
+    let one = 1;
+    let two = 2;
+    let three = 3;
+}
+
+function combinedStatement() {
+    let one = 1,
+        two = 2,
+        three = 3;
+}</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>This leads to subtle differences in the code.</p>
+
+        <pre><code>for (var i = 0; i < 5; i += 1) {
+    // ...
+}
+console.log(i); // -> 5</code></pre>
+
+        <pre><code>for (let i = 0; i < 5; i += 1) {
+    // ...
+}
+console.log(i);
+// -> ReferenceError: i is not defined</code></pre>
+
+        <p>But there are more differences ...</p>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Instead of variable hoisting, <code>let</code> creates a "temporal dead zone" that is resolved when the block closes.</p>
+
+        <pre><code>function doVarStuff() {
+    console.log("i = %o", i);
+    var i = 0;
+}
+
+function doLetStuff() {
+    console.log("i = %o", i);
+    let i = 0;
+}
+
+doVarStuff();
+// logs "i = undefined"
+doLetStuff();
+// ReferenceError: can't access lexical
+// declaration i before initialization</code></pre>
+
+        <p class="slide">To put it another way: a block-scoped variable doesn't even exist until it's created. It is <strong>not</strong> hoisted to the top of the block.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <p>You can't re-declare a block-scoped variable.</p>
+
+        <pre><code>function doVarStuff() {
+    var i = 0;
+    var i = 1;
+}
+// so far, so good
+
+function doLetStuff() {
+    let i = 0;
+    let i = 1;
+}
+// TypeError: redeclaration of let i</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Combining the two gets <strong>extremely</strong> confusing.</p>
+
+        <pre><code>var a = 5;
+var b = 10;
+
+if (a === 5) {
+    let a = 4; // The scope is inside the if-block
+    var b = 1; // The scope is inside the function
+
+    console.log(a);  // 4
+    console.log(b);  // 1
+}
+
+console.log(a); // 5
+console.log(b); // 1</code></pre>
+        <p><small><a href="https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Statements/let#let_vs_var">Credit: MDN</a></small></p>
+
+        <p><strong>Never combine <code>var</code> and <code>let</code>!</strong></p>
+
+    </section>
+
+    <section class="slide">
+
+        <p><code>let</code> has a cousin called <code>const</code>. They're exactly the same with one difference:</p>
+
+        <pre><code>function doLetStuff() {
+    let i = 0;
+    i = 1;
+}
+// so far, so good
+
+function doConstStuff() {
+    const i = 0;
+    i = 1;
+}
+// SyntaxError: invalid assignment to const i</code></pre>
+
+        <div class="slide">
+
+            <p>To avoid problems, always write <code>const</code> in uppercase and use underscores where necessary.</p>
+
+            <pre><code>const THING = 1;
+const JAVASCRIPT_CLUB = "easier than thinking";</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>To create an object constant takes a little more work.</p>
+
+        <pre><code>var o = {};
+Object.defineProperty(o, "NAME", {
+    configurable: false,
+    enumerable: true,
+    value: "JLo"
+    writable: false
+});
+
+o.NAME; // -> "JLo"</code></pre>
+
+        <div class="slide">
+
+            <p>Trying to change this property doesn't throw an error, it just doesn't work.</p>
+
+            <pre><code>o.NAME = "James";
+o.NAME; // -> "JLo"</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+        <h1>Containing Scope</h1>
+    </section>
+
+    <section class="slide">
+
+        <p>A function-scoped variable can only be contained by a function.</p>
+
+        <pre><code>function doStuff() {
+    var i = 0;
+}
+console.log(typeof i); // -> undefined
+
+(function () {
+    var i = 0;
+}());
+console.log(typeof i); // -> undefined</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <p>A block-scoped variable can be contained by functions, but any block (<code>{ ... }</code>) will do it.</p>
+
+        <pre><code>function doStuff() {
+    let i = 0;
+}
+console.log(typeof i); // -> undefined
+
+if (true) {
+    let i = 0;
+}
+console.log(typeof i); // -> undefined
+
+do {
+    let i = 0;
+} while (false);
+console.log(typeof i); // -> undefined
+
+{
+    let i = 0;
+}
+console.log(typeof i); // -> undefined</code></pre>
+
+    </section>
+
+    <section class="slide">
+        <p>Block-scope can be used in all modern browsers.</p>
+        <p class="slide">IE11 and upwards.</p>
+    </section>
+
+    <section class="slide">
+        <h1>Any questions?</h1>
+    </section>
+
+    <!-- deck.navigation snippet -->
+    <div aria-role="navigation">
+        <a href="#" class="deck-prev-link" title="Previous">&#8592;</a>
+        <a href="#" class="deck-next-link" title="Next">&#8594;</a>
+    </div>
+
+    <!-- deck.status snippet -->
+    <p class="deck-status" aria-role="status">
+        <span class="deck-status-current"></span>
+        /
+        <span class="deck-status-total"></span>
+    </p>
+
+    <!-- deck.goto snippet -->
+    <form action="." method="get" class="goto-form">
+        <label for="goto-slide">Go to slide:</label>
+        <input type="text" name="slidenum" id="goto-slide" list="goto-datalist">
+        <datalist id="goto-datalist"></datalist>
+        <input type="submit" value="Go">
+    </form>
+
+    <!-- End extension snippets. -->
+</div>
+
+<!-- Required JS files. -->
+<script src="../deck/jquery.min.js"></script>
+<script src="../deck/core/deck.core.js"></script>
+
+<!-- Extension JS files. Add or remove as needed. -->
+<script src="../deck/extensions/menu/deck.menu.js"></script>
+<script src="../deck/extensions/goto/deck.goto.js"></script>
+<script src="../deck/extensions/status/deck.status.js"></script>
+<script src="../deck/extensions/navigation/deck.navigation.js"></script>
+<script src="../deck/extensions/scale/deck.scale.js"></script>
+
+<!-- Initialize the deck. You can put this in an external file if desired. -->
+<script>
+$(function() {
+    $.deck('.slide');
+});
+</script>
+</body>
+</html>
