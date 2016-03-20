@@ -5,6 +5,7 @@ A series of lessons to improve existing JavaScript knowledge.
 ## Current Lessons
 
 - 01: Basics (How to Program)
+- 02: Variables and Scope
 
 ## Software Used
 
