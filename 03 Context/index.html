@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=1024, user-scalable=no">
+
+<title>Context</title>
+
+<!-- Required stylesheet -->
+<link rel="stylesheet" media="screen" href="../deck/core/deck.core.css">
+
+<!-- Extension CSS files go here. Remove or add as needed. -->
+<link rel="stylesheet" media="screen" href="../deck/extensions/goto/deck.goto.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/menu/deck.menu.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/navigation/deck.navigation.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/status/deck.status.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/scale/deck.scale.css">
+
+<!-- Style theme. More available in /themes/style/ or create your own. -->
+<link rel="stylesheet" media="screen" href="../deck/themes/style/web-2.0.css">
+
+<!-- Transition theme. More available in /themes/transition/ or create your own. -->
+<link rel="stylesheet" media="screen" href="../deck/themes/transition/horizontal-slide.css">
+
+<!-- Basic black and white print styles -->
+<link rel="stylesheet" media="print" href="../deck/core/print.css">
+
+<!-- Required Modernizr file -->
+<script src="../deck/modernizr.custom.js"></script>
+
+<script>
+var id = "global";
+var object = {
+
+    id: "object",
+
+    alertIt: function () {
+        alert(this.id);
+    },
+
+    addHandlers: function () {
+
+        var one = document.getElementById("one");
+
+        one.addEventListener("click", this.alertIt);
+
+    },
+
+    addHandlers2: function () {
+
+        var that = this;
+        var two = document.getElementById("two");
+
+        two.addEventListener("click", function () {
+            that.alertIt();
+        });
+
+    },
+
+    addHandlers3: function () {
+
+        var three = document.getElementById("three");
+
+        three.addEventListener("click", () => this.alertIt());
+
+    }
+
+};
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    object.addHandlers();
+    object.addHandlers2();
+    object.addHandlers3();
+
+});
+</script>
+
+
+</head>
+<body>
+<div class="deck-container">
+
+    <section class="slide">
+        <h1>Context</h1>
+    </section>
+
+    <section class="slide">
+
+        <h2>Context</h2>
+
+        <p>Using context involves understanding the <code>this</code> keyword.</p>
+
+        <div class="slide">
+
+            <p>With a normal function, <code>this</code> refers to the <code>window</code> object. In strict mode, it's <code>undefined</code>.</p>
+            <pre><code>function a() {
+    console.log(this);
+}
+
+function b() {
+    "use strict";
+    console.log(this);
+}
+
+a(); // logs: window
+b(); // logs: undefined</code></pre>
+
+        </div>
+
+        <div class="slide">
+            <p>Using a fat-arrow function always has <code>this</code> set to <code>window</code>.</p>
+            <pre><code>var c = () => console.log(this);
+var d = () => {
+    "use strict";
+    console.log(this);
+};
+
+c(); // logs: window
+d(); // logs: window</code></pre>
+        </div>
+
+        <p class="slide">Fat-arrow functions are available in Firefox and Chrome but only available in IE Edge, not IE 11 &#9785;</p>
+
+    </section>
+
+    <section class="slide">
+
+        <p>When using objects, <code>this</code> refers to the object.</p>
+
+        <pre><code>var obj = {
+    logit: function () {
+        console.log(this);
+    }
+};
+obj.logit(); // logs: obj</code></pre>
+
+        <div class="slide">
+
+            <p>The same function can have different contexts depending on the object.</p>
+
+            <pre><code>function logit() {
+    console.log(this);
+}
+
+var o1 = { logit: logit };
+var o2 = { logit: logit };
+
+logit(); // logs: window
+o1.logit(); // logs: o1
+o2.logit(); // logs: o2</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>When dealing with an instance, <code>this</code> refers to the instance itself</p>
+
+        <pre><code>function Foo() {}
+Foo.prototype = {
+    logit: function () {
+        console.log(this);
+    }
+};
+
+var fooInst = new Foo();
+fooInst.logit(); // logs: fooInst</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <p>With event handlers, <code>this</code> is set to the element.</p>
+
+        <pre><code>var button1 = document.querySelector("button#one");
+var button2 = document.querySelector("button#two");
+
+button1.onclick = function () {
+    console.log(this);
+};
+button2.addEventListener("click", function () {
+    console.log(this);
+});
+
+// click button 1 logs: &lt;button id="one"&gt;
+// click button 2 logs: &lt;button id="two"&gt;</code></pre>
+
+        <div class="slide">
+
+            <p>jQuery event handler also bind to the event - this is probably where you recognise <code>this</code>.</p>
+
+            <pre><code>$("button#three").on("click", function () {
+    console.log(this);
+});
+
+// click button 3 logs &lt;button id="three"&gt;</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Things get complicated with nested functions as this can reset the context.</p>
+
+        <pre><code>var obj = {
+    logit: function () {
+
+        console.log(this);
+
+        function a() {
+            console.log(this);
+        }
+        a();
+
+        var b = () => console.log(this);
+        b();
+
+    }
+};
+obj.logit();
+// logs: obj
+// then: window
+// then: obj</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>First test</h2>
+
+        <p>What will the buttons alert?</p>
+
+        <pre><code>var id = "global";
+var object = {
+
+    id: "object",
+
+    alertIt: function () {
+        alert(this.id);
+    },
+
+    addHandlers: function () {
+
+        var one = document.getElementById("one");
+
+        one.addEventListener("click", this.alertIt);
+
+    }
+
+};
+
+object.addHandlers();</code></pre>
+
+        <p><button id="one">#one</button></p>
+
+    </section>
+
+    <section class="slide">
+
+        <p>You can make a reference to the context and use that when binding event handlers.</p>
+        <p>There is no convention for the name, but I tend to call it <code>that</code>.</p>
+
+        <pre><code>object.addHandlers2 = function () {
+
+    var that = this;
+    var two = document.getElementById("two");
+
+    two.addEventListener("click", function () {
+        that.alertIt();
+    });
+
+};</code></pre>
+
+        <p><button id="two">#two</button></p>
+
+    </section>
+
+    <section class="slide">
+
+        <p>You can also use a fat-arrow function.</p>
+
+        <pre><code>
+object.addHandlers3 = function () {
+
+    var three = document.getElementById("three");
+
+    three.addEventListener("click", () => this.alertIt());
+
+};
+        </code></pre>
+
+        <p><button id="three">#three</button></p>
+
+    </section>
+
+    <section class="slide">
+
+        <p>The ES5 array methods (<code>every</code>, <code>filter</code>, <code>forEach</code>, <code>map</code> and <code>some</code>) allow you to pass the context in after the function.</p>
+
+        <pre><code>var obj = {
+    loopLog: function () {
+
+        [1, 2, 3].forEach(function (n) {
+            console.log("n = %d and this = %o", n, this);
+        }, this);
+
+    }
+};
+obj.loopLog();
+// logs: n = 1 and this = obj
+// then: n = 2 and this = obj
+// then: n = 3 and this = obj</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Setting context</h2>
+
+        <p>There are also three ways to set the context of a function.</p>
+
+        <ul class="slide">
+            <li><code>Function.prototype.call()</code></li>
+            <li><code>Function.prototype.apply()</code></li>
+            <li><code>Function.prototype.bind()</code></li>
+        </ul>
+
+    </section>
+
+    <section class="slide">
+
+        <h2><code>Function.prototype.call()</code></h2>
+
+        <div class="slide">
+
+            <p>The <code>call</code> method allows you to set the context and initial arguments.</p>
+
+            <pre><code>function logit(a, b) {
+
+    console.log(
+        "context = %o, a = %o and b = %o",
+        this,
+        a,
+        b
+    );
+
+}
+
+logit(1, 2);
+// logs: context = window, a = 1 and b = 2
+var obj = {};
+logit.call(obj);
+// logs: context = obj, a = undefined and b = undefined
+logit.call(obj, 1, 2);
+// logs: context = obj, a = 1 and b = 2</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2><code>Function.prototype.apply()</code></h2>
+
+        <div class="slide">
+
+            <p>The <code>apply</code> method is the same as the <code>call</code> method except that it takes an array instead of individual arguments.</p>
+
+            <pre><code>function logit(a, b) {
+
+    console.log(
+        "context = %o, a = %o and b = %o",
+        this,
+        a,
+        b
+    );
+
+}
+
+logit(1, 2);
+// logs: context = window, a = 1 and b = 2
+var obj = {};
+logit.apply(obj);
+// logs: context = obj, a = undefined and b = undefined
+logit.call(obj, [1, 2]);
+// logs: context = obj, a = 1 and b = 2</code></pre>
+
+        </div>
+
+        <div class="slide">
+
+            <p>You can also use array-like structures like the <code>arguments</code> keyword or even a string.</p>
+
+            <pre><code>logit.apply(obj, "ab");
+// logs: context = obj, a = "a" and b = "b"</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2><code>Function.prototype.bind()</code></h2>
+
+        <div class="slide">
+
+            <p>The <code>bind</code> method looks a lot like <code>call</code> except that it returns a function, rather than executing it.</p>
+
+            <pre><code>function logit(a, b) {
+
+    console.log(
+        "context = %o, a = %o and b = %o",
+        this,
+        a,
+        b
+    );
+
+}
+
+var obj = {};
+var bound0 = logit.bind(obj);
+var bound1 = logit.bind(obj, 1);
+
+bound0(10, 20);
+// logs: context - obj, a = 10 and b = 20
+bound1(10, 20);
+// logs: context - obj, a = 1 and b = 10</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>This is very useful when moving functions from one object to another.</p>
+
+        <pre><code>var o1 = {
+
+    name: "object 1"
+
+    logit: function () {
+        console.log(this.name);
+    }
+
+};
+
+var o2 = {
+    name: "object 2";
+};
+
+o2.logit = o1.logit;
+o2.boundLogit = o1.logit.bind(o1);
+
+o2.logit(); // logs: "object 2"
+o2.boundLogit(); // logs: "object 1"</code></pre>
+
+        <div class="slide">
+
+            <p>Once bound, a method cannot be re-bound.</p>
+
+            <pre><code>o2.boundLogit2 = o2.boundLogit.bind(o2);
+o2.boundLogit2();
+// logs: "object 1"</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Summing up context</h2>
+
+        <ul>
+            <li>
+                <p><code>this</code> refers to the object the function is a part of. That also means:</p>
+                <ul>
+                    <li><code>window</code> for global functions.</li>
+                    <li><code>undefined</code> for global functions in strict mode.</li>
+                    <li>The element with event handlers.</li>
+                </ul>
+            </li>
+            <li>
+                <p>Context can be set manually using:</p>
+                <ul>
+                    <li><code>Function.prototype.call()</code></li>
+                    <li><code>Function.prototype.apply()</code></li>
+                    <li><code>Function.prototype.bind()</code></li>
+                </ul>
+            </li>
+        </ul>
+
+    </section>
+
+
+
+
+    <section class="slide">
+        <h1>Any questions?</h1>
+    </section>
+
+    <!-- deck.navigation snippet -->
+    <div aria-role="navigation">
+        <a href="#" class="deck-prev-link" title="Previous">&#8592;</a>
+        <a href="#" class="deck-next-link" title="Next">&#8594;</a>
+    </div>
+
+    <!-- deck.status snippet -->
+    <p class="deck-status" aria-role="status">
+        <span class="deck-status-current"></span>
+        /
+        <span class="deck-status-total"></span>
+    </p>
+
+    <!-- deck.goto snippet -->
+    <form action="." method="get" class="goto-form">
+        <label for="goto-slide">Go to slide:</label>
+        <input type="text" name="slidenum" id="goto-slide" list="goto-datalist">
+        <datalist id="goto-datalist"></datalist>
+        <input type="submit" value="Go">
+    </form>
+
+    <!-- End extension snippets. -->
+</div>
+
+<!-- Required JS files. -->
+<script src="../deck/jquery.min.js"></script>
+<script src="../deck/core/deck.core.js"></script>
+
+<!-- Extension JS files. Add or remove as needed. -->
+<script src="../deck/extensions/menu/deck.menu.js"></script>
+<script src="../deck/extensions/goto/deck.goto.js"></script>
+<script src="../deck/extensions/status/deck.status.js"></script>
+<script src="../deck/extensions/navigation/deck.navigation.js"></script>
+<script src="../deck/extensions/scale/deck.scale.js"></script>
+
+<!-- Initialize the deck. You can put this in an external file if desired. -->
+<script>
+$(function() {
+    $.deck('.slide');
+});
+</script>
+</body>
+</html>

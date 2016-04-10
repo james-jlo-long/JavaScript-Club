@@ -4,8 +4,9 @@ A series of lessons to improve existing JavaScript knowledge.
 
 ## Current Lessons
 
-- 01: Basics (How to Program)
-- 02: Variables and Scope
+- 01: [Basics (How to Program)](http://james-jlo-long.github.io/JavaScript-Club/01%20Basics/)
+- 02: [Variables and Scope](http://james-jlo-long.github.io/JavaScript-Club/02%20Scope/)
+- 03: [Context](http://james-jlo-long.github.io/JavaScript-Club/03%20Context/)
 
 ## Software Used
 
