@@ -111,7 +111,7 @@ b(); // logs: undefined</code></pre>
         </div>
 
         <div class="slide">
-            <p>Using a fat-arrow function always has <code>this</code> set to <code>window</code>.</p>
+            <p>Using a fat-arrow function globally always has <code>this</code> set to <code>window</code>. This is because a fat-arrow function has "lexical context" meaning that it is always bound to the context above.</p>
             <pre><code>var c = () => console.log(this);
 var d = () => {
     "use strict";
@@ -131,26 +131,26 @@ d(); // logs: window</code></pre>
         <p>When using objects, <code>this</code> refers to the object.</p>
 
         <pre><code>var obj = {
-    logit: function () {
+    logIt: function () {
         console.log(this);
     }
 };
-obj.logit(); // logs: obj</code></pre>
+obj.logIt(); // logs: obj</code></pre>
 
         <div class="slide">
 
             <p>The same function can have different contexts depending on the object.</p>
 
-            <pre><code>function logit() {
+            <pre><code>function logIt() {
     console.log(this);
 }
 
-var o1 = { logit: logit };
-var o2 = { logit: logit };
+var o1 = { logIt: logIt };
+var o2 = { logIt: logIt };
 
-logit(); // logs: window
-o1.logit(); // logs: o1
-o2.logit(); // logs: o2</code></pre>
+logIt(); // logs: window
+o1.logIt(); // logs: o1
+o2.logIt(); // logs: o2</code></pre>
 
         </div>
 
@@ -162,13 +162,15 @@ o2.logit(); // logs: o2</code></pre>
 
         <pre><code>function Foo() {}
 Foo.prototype = {
-    logit: function () {
+    logIt: function () {
         console.log(this);
     }
 };
 
 var fooInst = new Foo();
-fooInst.logit(); // logs: fooInst</code></pre>
+fooInst.logIt(); // logs: fooInst</code></pre>
+
+        <p><small>I will explain the <code>prototype</code> property in more detail next lesson. For now, just understand that it's a way of defining properties and methods on an instance.</small></p>
 
     </section>
 
@@ -208,7 +210,7 @@ button2.addEventListener("click", function () {
         <p>Things get complicated with nested functions as this can reset the context.</p>
 
         <pre><code>var obj = {
-    logit: function () {
+    logIt: function () {
 
         console.log(this);
 
@@ -222,7 +224,7 @@ button2.addEventListener("click", function () {
 
     }
 };
-obj.logit();
+obj.logIt();
 // logs: obj
 // then: window
 // then: obj</code></pre>
@@ -235,7 +237,7 @@ obj.logit();
 
         <p>What will the buttons alert?</p>
 
-        <pre><code>var id = "global";
+        <pre><code>var id = "window";
 var object = {
 
     id: "object",
@@ -340,7 +342,7 @@ obj.loopLog();
 
             <p>The <code>call</code> method allows you to set the context and initial arguments.</p>
 
-            <pre><code>function logit(a, b) {
+            <pre><code>function logIt(a, b) {
 
     console.log(
         "context = %o, a = %o and b = %o",
@@ -351,12 +353,12 @@ obj.loopLog();
 
 }
 
-logit(1, 2);
+logIt(1, 2);
 // logs: context = window, a = 1 and b = 2
 var obj = {};
-logit.call(obj);
+logIt.call(obj);
 // logs: context = obj, a = undefined and b = undefined
-logit.call(obj, 1, 2);
+logIt.call(obj, 1, 2);
 // logs: context = obj, a = 1 and b = 2</code></pre>
 
         </div>
@@ -371,7 +373,7 @@ logit.call(obj, 1, 2);
 
             <p>The <code>apply</code> method is the same as the <code>call</code> method except that it takes an array instead of individual arguments.</p>
 
-            <pre><code>function logit(a, b) {
+            <pre><code>function logIt(a, b) {
 
     console.log(
         "context = %o, a = %o and b = %o",
@@ -382,12 +384,12 @@ logit.call(obj, 1, 2);
 
 }
 
-logit(1, 2);
+logIt(1, 2);
 // logs: context = window, a = 1 and b = 2
 var obj = {};
-logit.apply(obj);
+logIt.apply(obj);
 // logs: context = obj, a = undefined and b = undefined
-logit.call(obj, [1, 2]);
+logIt.apply(obj, [1, 2]);
 // logs: context = obj, a = 1 and b = 2</code></pre>
 
         </div>
@@ -396,7 +398,7 @@ logit.call(obj, [1, 2]);
 
             <p>You can also use array-like structures like the <code>arguments</code> keyword or even a string.</p>
 
-            <pre><code>logit.apply(obj, "ab");
+            <pre><code>logIt.apply(obj, "ab");
 // logs: context = obj, a = "a" and b = "b"</code></pre>
 
         </div>
@@ -411,7 +413,7 @@ logit.call(obj, [1, 2]);
 
             <p>The <code>bind</code> method looks a lot like <code>call</code> except that it returns a function, rather than executing it.</p>
 
-            <pre><code>function logit(a, b) {
+            <pre><code>function logIt(a, b) {
 
     console.log(
         "context = %o, a = %o and b = %o",
@@ -423,8 +425,8 @@ logit.call(obj, [1, 2]);
 }
 
 var obj = {};
-var bound0 = logit.bind(obj);
-var bound1 = logit.bind(obj, 1);
+var bound0 = logIt.bind(obj);
+var bound1 = logIt.bind(obj, 1);
 
 bound0(10, 20);
 // logs: context - obj, a = 10 and b = 20
@@ -443,7 +445,7 @@ bound1(10, 20);
 
     name: "object 1"
 
-    logit: function () {
+    logIt: function () {
         console.log(this.name);
     }
 
@@ -453,20 +455,78 @@ var o2 = {
     name: "object 2";
 };
 
-o2.logit = o1.logit;
-o2.boundLogit = o1.logit.bind(o1);
+o2.logIt = o1.logIt;
+o2.boundLogIt = o1.logIt.bind(o1);
 
-o2.logit(); // logs: "object 2"
-o2.boundLogit(); // logs: "object 1"</code></pre>
+o2.logIt(); // logs: "object 2"
+o2.boundLogIt(); // logs: "object 1"</code></pre>
 
         <div class="slide">
 
-            <p>Once bound, a method cannot be re-bound.</p>
+            <p>Once bound, a method cannot be re-bound and a fat-arrow function cannot be bound to anything.</p>
 
-            <pre><code>o2.boundLogit2 = o2.boundLogit.bind(o2);
-o2.boundLogit2();
+            <pre><code>o2.boundLogIt2 = o2.boundLogIt.bind(o2);
+o2.boundLogIt2();
 // logs: "object 1"</code></pre>
 
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Second test</h2>
+
+        <p>What will the console log?</p>
+
+        <pre><code>var name = "window";
+
+var o1 = {
+    name: "one",
+    logIt: () => console.log(this.name)
+};
+
+var o2 = {
+    name: "two",
+    logIt: o1.logIt.bind(o2)
+};
+
+o2.logIt();</code></pre>
+
+        <div class="slide">
+
+            <p><code>"window"</code></p>
+            <p>Remember: a fat-arrow function is always bound to the context above.</p>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Third test</h2>
+
+        <pre><code>var name = "window";
+
+var o3 = {
+    name: "three",
+    setup: function () {
+        this.logIt = () => console.log(this.name)
+    }
+};
+
+o3.setup();
+
+var o4 = {
+    name: "four",
+    logIt: o3.logIt.bind(o4)
+};
+
+o4.logIt();</code></pre>
+
+        <div class="slide">
+            <p><code>"three"</code></p>
+            <p>Remember: a bound function cannot be re-bound.</p>
         </div>
 
     </section>
@@ -491,6 +551,12 @@ o2.boundLogit2();
                     <li><code>Function.prototype.apply()</code></li>
                     <li><code>Function.prototype.bind()</code></li>
                 </ul>
+            </li>
+            <li>
+                <p>Fat-arrow functions are always bound to the context above (lexical context).</p>
+            </li>
+            <li>
+                <p>Once set, context cannot be re-bound.</p>
             </li>
         </ul>
 
