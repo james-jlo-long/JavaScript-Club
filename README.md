@@ -7,6 +7,7 @@ A series of lessons to improve existing JavaScript knowledge.
 - 01: [Basics (How to Program)](https://james-jlo-long.github.io/JavaScript-Club/01%20Basics/)
 - 02: [Variables and Scope](https://james-jlo-long.github.io/JavaScript-Club/02%20Scope/)
 - 03: [Context](https://james-jlo-long.github.io/JavaScript-Club/03%20Context/)
+- 04: [Inheritance](https://james-jlo-long.github.io/JavaScript-Club/04%20Inheritance/)
 
 ## Software Used
 

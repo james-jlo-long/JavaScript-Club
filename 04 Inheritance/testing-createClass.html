@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="utf-8">
+<title>Testing createClass</title>
+
+<script src="createClass.js"></script>
+
+<script>
+var Foo = createClass({
+
+    init: function () {
+        this.count = 0;
+    },
+
+    increase: function () {
+        this.count += 1;
+    },
+
+    decrease: function () {
+        this.count -= 1;
+    }
+
+});
+
+var Bar = createClass(Foo, {
+
+    init: function (name) {
+
+        this.$super();
+        this.name = name;
+
+    },
+
+    getCount: function () {
+        return this.count;
+    }
+
+});
+
+var Baz = createClass(Bar, {
+
+    init: function (name) {
+
+        this.$super(name);
+        this.baz = true;
+
+    }
+
+});
+
+Bar.addMethod("halve", function () {
+    this.count /= 2;
+});
+
+Baz.addMethod("getCount", function () {
+    return this.$super() * 2;
+});
+
+var foo = new Foo();
+var bar = new Bar("bar");
+var baz = new Baz("baz");
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    "use strict";
+
+    Array
+        .from(document.querySelectorAll("[data-assert]"))
+        .forEach(function (node) {
+
+            var isTrue = false;
+            var assertion = node.dataset.assert;
+
+            try {
+                eval("isTrue = (" + assertion + ")");
+            } catch (ignore) {
+            }
+
+            node.textContent = assertion;
+            node.classList.add(
+                isTrue
+                    ? "is-true"
+                    : "is-false"
+            );
+
+        });
+
+});
+</script>
+
+<style>
+.is-true  { background-color: #9F9; }
+.is-false { background-color: #F99; }
+</style>
+
+</head>
+<body>
+
+<ul>
+    <li data-assert="typeof foo.count === 'number'"></li>
+    <li data-assert="typeof bar.count === 'number'"></li>
+    <li data-assert="bar.name === 'bar'"></li>
+    <li data-assert="typeof bar.increase === 'function'"></li>
+    <li data-assert="typeof bar.getCount === 'function'"></li>
+    <li data-assert="typeof foo.getCount !== 'function'"></li>
+    <li data-assert="baz.name === 'baz'"></li>
+    <li data-assert="baz.baz"></li>
+    <li data-assert="typeof bar.halve === 'function'"></li>
+    <li data-assert="typeof baz.getCount() === 'number'"></li>
+    <li data-assert="baz.getCount() === baz.count * 2"></li>
+</ul>
+
+</body>
+</html>

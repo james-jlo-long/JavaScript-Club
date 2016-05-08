@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=1024, user-scalable=no">
+
+<title>Inheritance</title>
+
+<!-- Required stylesheet -->
+<link rel="stylesheet" media="screen" href="../deck/core/deck.core.css">
+
+<!-- Extension CSS files go here. Remove or add as needed. -->
+<link rel="stylesheet" media="screen" href="../deck/extensions/goto/deck.goto.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/menu/deck.menu.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/navigation/deck.navigation.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/status/deck.status.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/scale/deck.scale.css">
+
+<!-- Style theme. More available in /themes/style/ or create your own. -->
+<link rel="stylesheet" media="screen" href="../deck/themes/style/web-2.0.css">
+
+<!-- Transition theme. More available in /themes/transition/ or create your own. -->
+<link rel="stylesheet" media="screen" href="../deck/themes/transition/horizontal-slide.css">
+
+<!-- Basic black and white print styles -->
+<link rel="stylesheet" media="print" href="../deck/core/print.css">
+
+<!-- Required Modernizr file -->
+<script src="../deck/modernizr.custom.js"></script>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    "use strict";
+
+    var one = {
+        count: 1,
+        array: [],
+        increase: function () {
+            this.count += 1;
+        },
+        push: function (thing) {
+            this.array.push(thing);
+        }
+    };
+    var two = Object.create(one);
+
+    two.increase();
+    two.push("a");
+
+    document.getElementById("q1").addEventListener("click", function () {
+
+        alert(
+            "one.count = " + one.count + "\n" +
+            "one.array = " + JSON.stringify(one.array) + "\n\n" +
+            "two.count = " + two.count + "\n" +
+            "two.array = " + JSON.stringify(two.array) + "\n"
+        );
+
+    });
+
+    var three = {
+        init: function () {
+            this.count = 1;
+            this.array = [];
+        },
+        increase: function () {
+            this.count += 1;
+        },
+        push: function (thing) {
+            this.array.push(thing);
+        }
+    };
+    var four = Object.create(three);
+
+    three.init();
+    four.init();
+
+    four.increase();
+    four.push("a");
+
+    document.getElementById("q2").addEventListener("click", function () {
+
+        alert(
+            "one.count = " + three.count + "\n" +
+            "one.array = " + JSON.stringify(three.array) + "\n\n" +
+            "two.count = " + four.count + "\n" +
+            "two.array = " + JSON.stringify(four.array) + "\n"
+        );
+
+    });
+
+});
+
+</script>
+
+</head>
+<body>
+<div class="deck-container">
+
+    <section class="slide">
+        <h1>Inheritance Patterns</h1>
+    </section>
+
+    <section class="slide">
+
+        <h2>Programmer's Series of Thoughts</h2>
+
+        <ol>
+            <li class="slide">A function should do one thing.</li>
+            <li class="slide">
+
+                <p>I should group together similar functions.</p>
+
+                <pre><code>// Before:
+function arrayUnique(array) { /* ... */ }
+function arrayCommon(array) { /* ... */ }
+function arrayDiff(array)   { /* ... */ }</code></pre>
+                <pre><code>// After:
+var arrayUtils = {
+    unique: function (array) { /* ... */ }
+    common: function (array) { /* ... */ }
+    diff:   function (array) { /* ... */ }
+};</code></pre>
+
+            </li>
+            <li class="slide">How do I manipulate the same <code>array</code>? <small>(Context)</small></li>
+            <li class="slide">How do I share functionality across multiple objects?<br><small>(Inheritance or mixins)</small></li>
+        </ol>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>How inheritance works</h2>
+
+        <div class="slide">
+
+            <p>Essentially, you create an object, then create a second object, based on the first.</p>
+
+            <pre><code>var one = {};
+var two = somehowInheritFrom(one);</code></pre>
+
+        </div>
+
+        <div class="slide">
+
+            <p>When JavaScript is trying to find a method or property, it works its way up the chain to find it.</p>
+            <p>At the top of the chain are the methods on <code>Object.prototype</code>. If it's not there, <code>undefined</code> is returned.</p>
+
+            <pre><code>two.doSomething();
+// Does `two` have `doSomething`? No
+// Does `one` have `doSomething`? No
+// Does `Object.prototype` have `doSomething`? No
+// return `undefined`
+// undefined();
+// TypeError: two.doSomething is not a function</code></pre>
+
+        </div>
+
+        <p class="slide">There can be a performance hit with longer chain lengths - try to keep the chain length small.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <!-- what is the object? -->
+
+        <h2>Question 1: What is <code>alert</code>ed?</h2>
+
+        <pre><code>var one = {
+    count: 1,
+    array: [],
+    increase: function () { this.count += 1; },
+    push: function (thing) { this.array.push(thing); }
+};
+var two = somehowInheritFrom(one);
+var jstr = JSON.stringify;
+
+two.increase();
+two.push("a");
+
+document.getElementById("q1").onclick = function () {
+
+    alert(
+        "one.count = " + one.count + "\n" +
+        "one.array = " + jstr(one.array) + "\n\n" +
+        "two.count = " + two.count + "\n" +
+        "two.array = " + jstr(two.array) + "\n"
+    );
+
+};</code></pre>
+
+        <p><button id="q1">#q1</button></p>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Gotcha</h2>
+
+        <p>There is a gotcha when you start with inheritance: JavaScript references non-primative inherited properties, <strong>it does not copy them</strong>. When manipulating them, it manipulates the original, not a clone.</p>
+
+        <pre><code>var one = {
+    count: 1, // primative
+    list: []  // non-primative
+    increase: function () { this.count += 1; },
+    push: function (thing) { this.array.push(thing); }
+};
+var two = somehowInheritFrom(one);
+
+two.increase();
+// one.count is still 1 and two.count is 2
+
+two.push("a");
+// one.array = ["a"] but two.array is also ["a"]</code></pre>
+
+    </section>
+<!-- checking: object.property === undefined / "property" in object || object.hasOwnProperty("property") & gotcha! -->
+    <section class="slide">
+
+        <p>To get around that, and avoid confusion, <strong>always create your properties inside your methods</strong>.</p>
+
+        <pre><code>var one = {
+    init: function () {
+        this.count = 1; // primative
+        this.list = []; // non-primative
+    }
+    increase: function () { this.count += 1; },
+    push: function (thing) { this.array.push(thing); }
+};
+var two = somehowInheritFrom(one);
+var jstr = JSON.stringify;
+
+one.init();
+two.init();
+
+two.increase();
+two.push("a");
+
+document.getElementById("q2").onclick = function () {
+
+    alert(
+        "one.count = " + one.count + "\n" +
+        "one.array = " + jstr(one.array) + "\n\n" +
+        "two.count = " + two.count + "\n" +
+        "two.array = " + jstr(two.array) + "\n"
+    );
+
+};</code></pre>
+
+        <p><button id="q2">#q2</button></p>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Checking properties exist</h2>
+
+        <p>There are three ways of checking whether an object has a property ...</p>
+        <p class="slide"> ... and a gotcha for each of them.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <h2><code>object.property === undefined</code></h2>
+
+        <p>If JavaScript can't find the property, it returns <code>undefined</code>, remember?</p>
+
+        <pre><code>var one = {
+    exists: true
+};
+one.exists; // -> true
+one.does_not_exist; // -> undefined
+one.does_not_exist === undefined; // -> true</code></pre>
+
+        <div class="slide">
+
+            <h3>The gotcha</h3>
+
+            <p>If you create a property and set it to <code>undefined</code> then this check completely breaks.</p>
+
+            <pre><code>var two = {
+    exists: true,
+    also_exists: undefined
+};
+two.exists; // -> true
+two.also_exists; // -> undefined
+two.also_exists === undefined; // -> true</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2><code>"property" in object</code></h2>
+
+        <p>JavaScript has the <code>in</code> operator which checks to see if the property exists in the object, returning <code>true</code> if it does.</p>
+
+        <pre><code>var one = {
+    exists: true
+};
+"exists" in one; // -> true
+"does_not_exist" in one; // -> false</code></pre>
+
+        <div class="slide">
+
+            <h3>The gotcha</h3>
+
+            <p><code>in</code> also checks the entire chain and returns <code>true</code> if it appears anywhere, which may not be what you want.</p>
+
+            <pre><code>var two = somehowInheritFrom(one);
+two.also_exists = true;
+"also_exists" in two; // -> true
+"exists" in two; // -> true</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2><code>hasOwnProperty</code></h2>
+
+        <p>All objects have a <code>hasOwnProperty</code> method that checks to see if the property exists in that object. It returns <code>true</code> if the property does and <code>false</code> if the property doesn't or the property is inherited.</p>
+
+        <pre><code>var one = {
+    exists: true
+};
+var two = somehowInheritFrom(one);
+two.also_exists = true;
+
+one.hasOwnProperty("exists"); // -> true
+two.hasOwnProperty("exists"); // -> false
+two.hasOwnProperty("also_exists"); // -> true</code></pre>
+
+        <div class="slide">
+
+            <h3>The gotcha</h3>
+
+            <p>It's possible to replace <code>hasOwnProperty</code> in your object and that can cause confusion.</p>
+
+            <pre><code>two.hasOwnProperty = function () {
+    return true;
+};
+
+one.hasOwnProperty("exists"); // -> true
+two.hasOwnProperty("exists"); // -> true - :-(
+two.hasOwnProperty("also_exists"); // -> true</code></pre>
+
+        </div>
+
+        <div class="slide">
+
+            <h3>The anti-gotcha</h3>
+
+            <p>If you use <code>Object.prototype.hasOwnProperty</code> and <code>call</code> it with the context of the object you're checking, it should return the correct result.</p>
+            <p><small>(assuming no-one replaced it - <strong>never modify <code>Object.prototype</code>!</strong></small></p>
+
+            <pre><code>Object.prototype.hasOwnProperty.call(one, "exists");
+// -> true
+Object.prototype.hasOwnProperty.call(two, "exists");
+// -> false
+Object.prototype.hasOwnProperty.call(two, "also_exists");
+// -> true</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Inheritance Techniques</h2>
+
+        <p>Because nothing is ever simple in JavaScript, there are five techniques you can use. They don't really have names, but I'll name them for simplicity.</p>
+
+        <ol class="slide">
+            <li>Prototypal technique <small>(<code>prototype</code> property)</small></li>
+            <li>Class technique <small>(JavaScript's new <code>class</code> keyword)</small></li>
+            <li>Create technique <small>(<code>Object.create()</code>)</small></li>
+            <li>Assign technique <small>(<code>Object.assign()</code>)</small></li>
+            <li>Functional technique <small>("Crockford Classless")</small></li>
+        </ol>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>The <code>prototype</code> property</h2>
+
+        <p>This is the "correct" technique. It's the most efficient, the basis of JavaScript, it's in all the books and it's how CoffeeScript's <code>class</code> keyword works.</p>
+        <p class="slide">It's also the most confusing technique by far.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <p>You start by creating a constructor function.</p>
+
+        <pre><code>var Foo = function () {
+    this.count = 0;
+};</code></pre>
+
+        <div class="slide">
+
+            <p>You then add methods to the <code>prototype</code> property.</p>
+
+            <pre><code>Foo.prototype = {
+
+    increase: function () {
+        this.count += 1;
+    },
+
+    decrease: function () {
+        this.count -= 1;
+    }
+
+};</code></pre>
+
+        </div>
+
+        <div class="slide">
+
+            <p>You create an instance using the <code>new</code> keyword.</p>
+            <p>If you remember the lesson on context, this changes the context of <code>Foo</code> from <code>window</code> to the instance - please don't forget the <code>new</code>.</p>
+
+            <pre><code>var foo = new Foo();
+
+foo.count; // -> 1
+foo.increase();
+foo.count; // -> 2</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>To create a sub-class, you need to set the <code>prototype</code> of the child to an instance of the parent.</p>
+
+        <pre><code>var Bar = function () {
+    this.count = 1;
+};
+
+Bar.prototype = new Foo();</code></pre>
+
+        <div class="slide">
+
+            <p>You can then add or replace functionality to the child's <code>prototype</code>. This does not affect the parent at all.</p>
+
+            <pre><code>Bar.prototype.getCount = function () {
+    return this.count;
+};</code></pre>
+
+        </div>
+
+        <div class="slide">
+
+            <p>Create an instance of the child the same way as you did before.</p>
+
+            <pre><code>var bar = new Bar();
+bar.getCount(); // -> 1
+bar.increase(); // Inherited from Foo
+bar.getCount(); // -> 2</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>A common mistake is to try to add multiple new methods by setting the child <code>prototype</code> to a new object, but this loses the link to the parent.</p>
+
+        <pre><code>var Bar = function () {
+    this.count = 1;
+};
+
+Bar.prototype = new Foo();
+Bar.prototype = {
+    getCount: function () {
+        return this.count;
+    }
+};
+
+var bar = new Bar();
+bar.increase(); // TypeError</code></pre>
+
+        <div class="slide">
+
+            <p>Another common mistake is to set the child's <code>prototype</code> to the parent's <code>prototype</code> but this makes the child's <code>prototype</code> a reference to the parent's so changing the child's changes the parent's as well.</p>
+
+            <pre><code>Bar.prototype = Foo.prototype;
+Bar.prototype.getCount = function () {
+    return this.count;
+};
+
+var foo = new Foo();
+foo.getCount(); // -> 1</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>The link is "live" meaning that if we add something to the parent, the child automatically gains the ability to use it.</p>
+
+        <pre><code>Foo.prototype.halve = function () {
+    this.count /= 2;
+};
+
+bar.getCount(); // -> 2
+bar.halve();
+bar.getCount(); // -> 1</code></pre>
+
+        <div class="slide">
+
+            <p>This is a "party trick" that JavaScript can do with inheritance. Other than debugging or hacking, it isn't actually very useful.</p>
+            <p>It also means that JavaScript can't optimise this because the link must always be maintained. So long as a child exists, the parent can't be garbage collected.</p>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>There are 2 problems with the "prototype technique":</p>
+
+        <div class="slide">
+
+            <p>Rewriting the constructor function of <code>Foo</code> is a good way to make mistakes.</p>
+
+            <pre><code>var Foo = function () {
+    this.count = 1;
+};
+
+var Bar = function () {
+    this.ccount = 11;
+};
+
+// ...
+bar.increase();
+bar.count; // -> 2; expected 12</code></pre>
+
+        </div>
+
+        <div class="slide">
+
+            <p>The constructor function <code>Foo</code> executes as soon as the inheritance is used.</p>
+
+            <pre><code>var Foo = function () {
+    this.count = 1;
+    console.log("hello");
+};
+
+var Bar = function () {
+    this.count = 1;
+};
+
+Bar.prototype = new Foo(); // logs "hello"</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>To get around the first problem, you can either call the parent from inside the child:</p>
+
+        <pre><code>var Bar = function () {
+    Foo.apply(this, arguments);
+};</code></pre>
+
+        <div class="slide">
+
+            <p>... but a lot of us create a constructor functon as a <code>prototype</code> method and make sure the constructor function just calls that.</p>
+            <p>You still have to remember to write the same constructor function each time, of course, but there are solutions to that.</p>
+
+            <pre><code>var Foo = function () {
+    return this.init.apply(this, arguments);
+};
+
+Foo.prototype = {
+
+    init: function () {
+        this.count = 1;
+        console.log("hi");
+    }
+
+    // ...
+
+};</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>To get around the second issue ...</p>
+
+        <pre><code>var Bar = function () {
+    return this.init.apply(this, arguments);
+};</code></pre>
+
+        <ol>
+            <li class="slide">
+                <p>You first create a new, empty function:</p>
+                <pre><code>var Temp = function () {};</code></pre>
+            </li>
+            <li class="slide">
+                <p>Then you set the <code>prototype</code> of the new function to the same as the parent's <code>prototype</code>:</p>
+                <pre><code>var Temp = function () {};
+Temp.prototype = Foo.prototype;</code></pre>
+            </li>
+            <li class="slide">
+                <p>Finally you set the <code>prototype</code> of the child to an instance of the empty function:</p>
+                <pre><code>var Temp = function () {};
+Temp.prototype = Foo.prototype;
+Bar.prototype = new Temp(); // does not log anything</code></pre>
+            </li>
+        </ol>
+
+        <pre class="slide"><code>var bar = new Bar();
+bar.increase();
+bar.count; // -> 2</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Since that's a lot of work, most of us use some kind of <code>createClass</code> function to handle the hard-to-remember stuff for us.</p>
+
+        <pre><code>function createClass(Base, proto) {
+
+    // The constructor function.
+    var F = function () {
+        return this.init.apply(this, arguments);
+    };
+
+    // Set Base as the optional argument.
+    if (!proto) {
+        proto = Base;
+        Base = Object;
+    }
+
+    // The empty function trick.
+    var T = function () {};
+    T.prototype = Base.prototype;
+    F.prototype = new T();
+
+    // Add the properties from proto onto F.prototype.
+    var prop;
+    var hasOwn = Object.prototype.hasOwnProperty;
+    for (prop in proto) {
+        if (hasOwn.call(proto, prop)) {
+            F.prototype[prop] = proto[prop];
+        }
+    }
+
+    // Add an empty init, if we need one.
+    if (typeof F.prototype.init !== "function") {
+        F.prototype.init = function () {};
+    }
+
+    // Return our new class.
+    return F;
+
+}</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <p>You can use that function to either create a class from nothing:</p>
+
+        <pre><code>var Foo = createClass({
+
+    init: function () {
+        this.count = 1;
+    },
+
+    increase: function () {
+        this.count += 1;
+    },
+
+    decrease: function () {
+        this.count -= 1;
+    }
+
+});
+
+var foo = new Foo();</code></pre>
+
+        <div class="slide">
+
+            <p>Or you can create a class based on another one:</p>
+
+            <pre><code>var Bar = createClass(Foo, {
+
+    getCount: function () {
+        return this.count;
+    }
+
+});
+
+var bar = new Bar();</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Sometimes you might want to override functionality but still access the parent functionality. For example, you might want to define a constructor function but still call the parent's constructor. This is known as accessing the "super" method.</p>
+        <p>The easiest way to do it with this technique is to simply call the parent's method and define the context.</p>
+
+        <pre><code>var Bar = createClass(Foo, {
+
+    init: function (name) {
+
+        Foo.prototype.init.call(this); // super
+        this.name = name;
+
+    }
+
+});
+
+var bar = new Bar("alpha");
+bar.count; // -> 1;
+bar.name; // -> "alpha"</code></pre>
+
+        <p class="slide">I'm not keen on this because you end up tightly-coupling the child to the parent; you can't add another class in the middle to do things like logging.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <p>I think that a nicer way is to modify <code>createClass</code> to keep a reference to the parent.</p>
+
+        <div class="slide">
+
+            <pre><code>function createClass(Base, proto) {
+
+    var F = function () {
+        return this.init.apply(this, arguments);
+    };
+
+    // ...
+
+    F.parent = Base.prototype;
+
+    // ...
+
+}</code></pre>
+
+            <p>Now we just call the parent method.</p>
+
+            <pre><code>var Bar = createClass(Foo, {
+
+    init: function (name) {
+
+        Bar.parent.init.call(this); // still super
+        this.name = name;
+
+    }
+
+});</code></pre>
+
+        </div>
+
+        <p class="slide">... mind you, that's still pretty ugly ...</p>
+
+    </section>
+
+    <section class="slide">
+
+        <p>In 2008, John Resig (the guy who first wrote jQuery) <a href="http://ejohn.org/blog/simple-javascript-inheritance/">showed a technique for creating a magic property</a> that had access to the parent method.</p>
+        <p>The technique was pretty confusing, in my opinion, but it's a good base to start from and shows how to do the magic.</p>
+
+        <div class="slide">
+
+            <p>First, a little-known technique in JavaScript is that all functions can be converted into strings. This allows us to do regular expression tests on the function to see if the magic property is being requested.</p>
+            <p><small>John Resig used the underscore to show that the property was magic. In JavaScript, an underscore prefix is reserved for browser-proprietary methods. The dollar sign is reserved for system-generated properties and I think that's a better fit.</small></p>
+
+            <pre><code>var fnTest = /[\.'"]\$super\b/;
+
+Bar.prototype.init = function (name) {
+    this.$super();
+    this.name = name;
+};
+Bar.prototype.getCount = function () {
+    return this.count;
+};
+
+fnTest.test(Bar.prototype.init); // -> true
+fnTest.test(Bar.prototype.getCount); // -> false</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Then we need a pretty complex <code>addMethod</code> to convert the method to understand our new magic property.</p>
+
+        <pre><code>createClass.addMethod = function (Func, name, method) {
+
+    var parent = Func.parent;
+
+    Func.prototype[name] = (
+        typeof method === "function"
+        && typeof parent[name] === "function"
+        && fnTest.test(method)
+    )
+        ? function () {
+
+            var temp = this.$super;
+            var ret;
+
+            this.$super = parent[name];
+            ret = method.apply(this, arguments);
+            this.$super = temp;
+
+            return ret;
+
+        }
+        : method;
+
+};</code></pre>
+
+        <div class="slide">
+
+            <p>Then we tweak the <code>createClass</code> method itself.</p>
+
+            <pre><code>function createClass(Base, proto) {
+
+    // ...
+
+    for (prop in proto) {
+        if (hasOwn.call(prop, proto) {
+            createClass.addMethod(F, prop, proto[prop]);
+        }
+    }
+
+    F.addMethod = function (name, method) {
+        createClass.addMethod(F, name, method);
+    };
+
+    // ...
+
+}</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>With that fully integrated, we can do clever things like this:</p>
+
+        <pre><code>var Foo = createClass({
+
+    init: function () {
+        this.count = 1;
+    }
+
+});
+
+var Bar = createClass(Foo, {
+
+    init: function (name) {
+
+        this.$super();
+        this.name = name;
+
+    }
+
+});
+
+var bar = new Bar("alpha");
+bar.count; // -> 1 (came from Foo#init)
+bar.name; // -> "alpha" (came from Bar#init)</code></pre>
+
+        <div class="slide">
+            <p>If you want to use this technique, I've included the full version of <code>createClass</code> in the <a href="https://github.com/james-jlo-long/JavaScript-Club/blob/master/04%20Inheritance/createClass.js">GitHut repo</a>.</p>
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>The <code>class</code> keyword</h2>
+
+        <p>This technique is really new (Chrome 42, Firefox 45, IE Edge 13) and really pointless (it's just syntactic sugar for the <code>prototype</code> technique). It's also a radical mis-understanding of how JavaScript works.</p>
+
+        <div class="slide">
+
+            <p>It looks a little similar and a bit familiar.</p>
+
+            <pre><code>class Foo {
+
+    constructor() {
+        this.count = 1;
+    }
+
+    increase() {
+        this.count += 1;
+    }
+
+    decrease() {
+        this.count -= 1;
+    }
+
+}
+
+var foo = new Foo();
+foo.increase();
+foo.count; // -> 2</code></pre>
+
+        </div>
+
+        <div class="slide">
+
+            <p>Extending is easier, to be fair.</p>
+
+            <pre><code>class Bar extends Foo {
+
+    getCount() {
+        return this.count;
+    }
+
+}
+
+var bar = new Bar();
+bar.getCount(); // -> 2</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Because this technique is the same as the <code>prototype</code> technique, they are interchangable.</p>
+
+        <pre><code>var Foo = function () {
+    this.count = 1;
+};
+
+Foo.prototype = {
+
+    increase: function () {
+        this.count += 1;
+    },
+
+    decrease: function () {
+        this.count -= 1;
+    }
+
+};
+
+class Bar extends Foo {
+
+    getCount() {
+        return this.count;
+    }
+
+}
+
+var bar = new Bar();
+bar.increase();
+bar.getCount(); // -> 2</code></pre>
+
+        <div class="slide">
+
+            <p>There are a couple more things that you can do with the new <code>class</code> keyword but nothing that we couldn't do before.</p>
+            <p>The <code>class</code> keyword can:</p>
+            <ul>
+                <li class="slide">Define getters and setters (like <code>Object.defineProperty</code>).</li>
+                <li class="slide">Access super methods (which we could do with careful programming in <code>createClass</code>).</li>
+                <li class="slide">Define static properties, which we could do anyway.</li>
+            </ul>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2><code>Object.create</code></h2>
+
+        <p>Remember that empty function trick you just a couple of slides ago? <code>Object.create</code> is essentially that.</p>
+
+        <pre><code>// Only needed before IE9
+if (typeof Object.create !== "function") {
+
+    Object.create = function (base) {
+
+        var F = function () {};
+        F.prototype = base;
+        return new F();
+
+    };
+
+}</code></pre>
+
+        <div class="slide">
+
+            <p>This means we can asjust the way we inherit from other constructors.</p>
+
+            <pre><code>var Bar = function () {
+    return this.init.apply(this, arguments);
+};
+Bar.prototype = Object.create(Foo.prototype);</code></pre>
+
+        </div>
+
+        <div class="slide">
+
+            <p>... and adjust our <code>createClass</code> function.</p>
+
+            <pre><code>function createClass(Base, proto) {
+
+    // ...
+
+    // The constructor function.
+    var F = function () {
+        return this.init.apply(this, arguments);
+    };
+
+    // The empty function trick.
+    F.prototype = Object.create(Base.prototype);
+
+    // ...
+
+}</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>But the <strong>really</strong> useful thing that we can do with <code>Object.create</code> is inherit directly from other objects without the need for constructors.</p>
+
+        <pre class="slide"><code>var one = {
+    exists: true
+};
+
+var two = Object.create(one); // somehowInheritFrom
+two.also_exists = true;
+
+two.exists; // -> true;
+two.also_exists; // -> true;
+
+one.also_exists; // -> false;</code></pre>
+
+        <div class="slide">
+
+            <p>The link is still live.</p>
+
+            <pre><code>one.newly_exists = true;
+two.newly_exists; // -> true</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2><code>Object.assign</code></h2>
+
+        <p>At some point, every single JavaScripter writes something like this:</p>
+
+        <pre><code>var one = {
+    foo: "foo"
+};
+var two = {
+    bar: "bar"
+};
+
+for (var prop in two) {
+    if (Object.prototype.hasOwnProperty.call(two, prop)) {
+        one[prop] = two[prop];
+    }
+}
+
+one; // -> { foo: "foo", bar: "bar" }</code></pre>
+
+        <div class="slide">
+
+            <p>Most popular libraries include a way of doing this.</p>
+
+            <pre><code>// PrototypeJS
+Object.extend(one, two);
+
+// jQuery
+$.extend(one, two);</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>In 2016, ECMAScript <strong>finally</strong> added a native function to do this: <code>Object.assign</code></p>
+
+        <pre><code>var one = {
+    foo: "foo"
+};
+
+var two = {
+    bar: "bar"
+};
+
+Object.assign(one, two);
+one; // -> { foo: "foo", bar: "bar }</code></pre>
+
+        <div class="slide">
+
+            <p><code>Object.assign</code> can take any number of variables (always extending the first object with the subsequent objects) and returns the first object afterwards. It's not in many browsers, but there's a simple polyfill:</p>
+
+            <pre><code>if (typeof Object.assign !== "function") {
+
+    Object.assign = function (source) {
+
+        var slice = Array.prototype.slice;
+        var objects = slice.call(arguments, 1);
+
+        objects.forEach(function (object) {
+
+            Object.keys(object).forEach(function (key) {
+                source[key] = object[key];
+            });
+
+        });
+
+        return source;
+
+    };
+
+}</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>This gives us the most simple version of inheritance ever created.</p>
+
+        <pre><code>var foo = {
+    count: 1
+};
+
+var bar = Object.assign({}, foo, {
+    name: "bar"
+});
+
+bar.count; // -> 1
+bar.name; // -> "bar"
+
+bar.hasOwnProperty("count"); // -> true
+bar.hasOwnProperty("name"); // -> true</code></pre>
+
+        <div class="slide">
+
+            <p>The trade-off is that the link is no longer live.</p>
+
+            <pre><code>foo.exists = true;
+bar.exists; // -> undefined</code></pre>
+
+        </div>
+
+        <div class="slide">
+
+            <p>If that sort of thing worries you, you can always combine <code>Object.assign</code> and <code>Object.create</code></p>
+
+            <pre><code>var foo = {
+    count: 1
+};
+
+var bar = Object.assign(Object.create(foo), {
+    name: "bar"
+});
+bar; // -> { count: 1, name: "bar" }
+
+foo.exists = true;
+bar; // -> { count: 1, name: "bar", exists: true }</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>"Crockford Classless"</h2>
+
+        <p>The final technique is rare but very effective. It creates a private scope (which no other technique can) and works in every single browser, node, CoffeeScript - everywhere.</p>
+
+        <div class="slide">
+
+            <p>The steps to creating an object are:</p>
+
+            <ol>
+                <li>Create a function that creates an object and any other private variables.</li>
+                <li>Create functions to modify the private variables.</li>
+                <li>Add those functions to the object.</li>
+                <li>(Freeze the object to prevent modification and) return it.</li>
+            </ol>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <pre><code>function makeFoo() {
+
+    "use strict";
+
+    // Step 1: create variables.
+    var foo = {};
+    var count = 1;
+
+    // Step 2: create functions.
+    function increase() {
+        count += 1;
+    }
+
+    function decrease() {
+        count -= 1;
+    }
+
+    function getCount() {
+        return count;
+    }
+
+    // Step 3: add the functions.
+    Object.assign(foo, {
+        increase: increase,
+        decrease: decrease,
+        getCount: getCount
+    });
+
+    // Step 4: freeze and return.
+    return Object.freeze(foo);
+
+}
+
+// Usage:
+var foo = makeFoo();
+foo.getCount(); // -> 1
+foo.increase();
+foo.getCount(); // -> 2</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Inheritance is just as simple as making another object one of the private variables in step 1. Everything else is the same.</p>
+        <p>You can also use the <code>make</code> function as a constructor.</p>
+
+        <pre><code>function makeBar(name) {
+
+    var bar = {};
+    var foo = makeFoo();
+
+    function getName() {
+        return name;
+    }
+
+    Object.assign(bar, foo, {
+        getName: getName
+    });
+
+    return Object.freeze(bar);
+
+}
+
+var bar = makeBar("bar");
+bar.getName(); // -> "bar"
+bar.getCount(); // -> 1</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Since you have access to the parent object, you don't need any tricks to use a super method.</p>
+
+        <pre><code>function makeBaz(firstname, lastname) {
+
+    var baz = {};
+    var bar = makeBar(firstname);
+
+    function getName() {
+        return bar.getName() + " " + lastname;
+    }
+
+    Object.assign(baz, bar, {
+        getName: getName
+    });
+
+    return Object.freeze(baz);
+
+}
+
+var baz = makeBaz("John", "Smith");
+baz.getName(); // -> "John Smith"</code></pre>
+
+        <p>If you notice, we're not inheriting anything, just copying the methods that we need. This allows the chain to be many levels deep without the performance hit that multiple layers of <code>prototype</code> can have.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Despite all these advantages and simplicity, it's hugely controversial and not considered "real" or "sensible".</p>
+
+        <ul>
+            <li class="slide">
+                <p><strong>Functions are created each time an instance is made. People say that this is a waste of memory.</strong></p>
+                <p>It wastes a handfull of kilobytes. When we the last time you bought a device where the memory was measured in kilobytes?</p>
+            </li>
+            <li class="slide">
+                <p><strong>Private variables can't be accessed or changed.</strong></p>
+                <p>Yeah ... private variables don't make any sense and they're not useful.</p>
+            </li>
+            <li class="slide">
+                <p><strong>You can't change a frozen object.</strong></p>
+                <p>That's actually an advantage - the engine can optimise that and your data is always preserved.</p>
+            </li>
+            <li class="slide">
+                <p><strong>There's no context so you can't change a variable unless it's part of the object.</strong></p>
+                <p>You can pass functions around without a problem and you always know which variables you're affecting.</p>
+            </li>
+        </ul>
+
+        <p class="slide">There are probably other criticisms and they mainly exist because Douglas Crockford was the one who suggested the technique.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Summary</h2>
+
+        <p>Of the five techniques:</p>
+        <ul>
+            <li>Use the <code>prototype</code> property if you can work out what the developer's <code>createClass</code> function is called.</li>
+            <li>Use the <code>class</code> keyword if you have to.</li>
+            <li>Use <code>Object.create</code> if you need a live link.</li>
+            <li>Use <code>Object.assign</code> if you don't need a live link.</li>
+            <li>Use "Crockford Classless" if you're ready to defend the technique.</li>
+        </ul>
+
+        <div class="slide">
+
+            <p>Personally, I think the combination of <code>Object.assign</code> and <code>Object.create</code> is the best one.</p>
+
+            <pre><code>var child = Object.assign(Object.create(parent), {
+    // ...
+});</code></pre>
+
+            <p>There are polyfills for both in the <a href="https://github.com/james-jlo-long/JavaScript-Club/blob/master/04%20Inheritance">GitHut repo</a>.</p>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+        <h1>Any questions?</h1>
+    </section>
+
+    <!-- deck.navigation snippet -->
+    <div aria-role="navigation">
+        <a href="#" class="deck-prev-link" title="Previous">&#8592;</a>
+        <a href="#" class="deck-next-link" title="Next">&#8594;</a>
+    </div>
+
+    <!-- deck.status snippet -->
+    <p class="deck-status" aria-role="status">
+        <span class="deck-status-current"></span>
+        /
+        <span class="deck-status-total"></span>
+    </p>
+
+    <!-- deck.goto snippet -->
+    <form action="." method="get" class="goto-form">
+        <label for="goto-slide">Go to slide:</label>
+        <input type="text" name="slidenum" id="goto-slide" list="goto-datalist">
+        <datalist id="goto-datalist"></datalist>
+        <input type="submit" value="Go">
+    </form>
+
+    <!-- End extension snippets. -->
+</div>
+
+<!-- Required JS files. -->
+<script src="../deck/jquery.min.js"></script>
+<script src="../deck/core/deck.core.js"></script>
+
+<!-- Extension JS files. Add or remove as needed. -->
+<script src="../deck/extensions/menu/deck.menu.js"></script>
+<script src="../deck/extensions/goto/deck.goto.js"></script>
+<script src="../deck/extensions/status/deck.status.js"></script>
+<script src="../deck/extensions/navigation/deck.navigation.js"></script>
+<script src="../deck/extensions/scale/deck.scale.js"></script>
+
+<!-- Initialize the deck. You can put this in an external file if desired. -->
+<script>
+$(function() {
+    $.deck('.slide');
+});
+</script>
+</body>
+</html>
