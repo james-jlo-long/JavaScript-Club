@@ -22,6 +22,8 @@ var SIZE = (function () {
 
     var size = {};
 
+    var ONSIZECHANGE = "sizechange";
+
     var sizes = {
         XS: 480,
         SM: 768,
@@ -44,14 +46,14 @@ var SIZE = (function () {
 
     function trigger(size) {
 
-        window.dispatchEvent("sizechange", {
+        document.dispatchEvent(new CustomEvent(ONSIZECHANGE, {
             bubbles: true,
             cancelable: true,
-            details: {
+            detail: {
                 size: size,
                 sizes: assign({}, sizes)
             }
-        });
+        }));
 
     }
 
@@ -149,11 +151,11 @@ var SIZE = (function () {
     }
 
     function onchange(handler) {
-        window.addEventListener("sizechange", handler);
+        document.addEventListener(ONSIZECHANGE, handler);
     }
 
     function offchange(handler) {
-        window.removeEventListener("sizechange", handler);
+        document.removeEventListener(ONSIZECHANGE, handler);
     }
 
     assign(size, {

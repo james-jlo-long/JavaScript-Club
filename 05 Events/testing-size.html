@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Testing size</title>
+
+<style>
+body::after {
+    background-color: #FCC;
+    bottom: 0;
+    content: "XS";
+    display: inline-block;
+    padding: 1em 2em;
+    position: absolute;
+    right: 0;
+}
+
+@media (min-width:  768px) { body::after { background-color: #CFC; content: "SM"; } }
+@media (min-width:  992px) { body::after { background-color: #CCF; content: "MD"; } }
+@media (min-width: 1200px) { body::after { background-color: #FCF; content: "LG"; } }
+</style>
+
+<script src="size.js"></script>
+
+</head>
+<body>
+
+<p id="result"></p>
+
+<script>
+var p = document.getElementById("result");
+SIZE.onchange(function (e) {
+    result.textContent = "e.detail.size = " + e.detail.size + "px";
+});
+</script>
+
+</body>
+</html>
