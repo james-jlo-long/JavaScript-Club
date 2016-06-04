@@ -1,0 +1,28 @@
+.tabs-tabs {
+    display: flex;
+    flex-direction: row;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tabs-tab {
+    background-color: #FFF;
+    border: 5px solid #CCC;
+    color: #000;
+    text-decoration: none;
+}
+
+.tabs-tab.is-active {
+    background-color: #CCC;
+}
+
+.tabs-panel {
+    background-color: #CCC;
+    display: none;
+    padding: 10px;
+}
+
+.tabs-panel.is-visible {
+    display: block;
+}

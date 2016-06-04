@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=1024, user-scalable=no">
+
+<title>Events</title>
+
+<!-- Required stylesheet -->
+<link rel="stylesheet" media="screen" href="../deck/core/deck.core.css">
+
+<!-- Extension CSS files go here. Remove or add as needed. -->
+<link rel="stylesheet" media="screen" href="../deck/extensions/goto/deck.goto.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/menu/deck.menu.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/navigation/deck.navigation.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/status/deck.status.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/scale/deck.scale.css">
+
+<!-- Style theme. More available in /themes/style/ or create your own. -->
+<link rel="stylesheet" media="screen" href="../deck/themes/style/web-2.0.css">
+
+<!-- Transition theme. More available in /themes/transition/ or create your own. -->
+<link rel="stylesheet" media="screen" href="../deck/themes/transition/horizontal-slide.css">
+
+<!-- Basic black and white print styles -->
+<link rel="stylesheet" media="print" href="../deck/core/print.css">
+
+<!-- Required Modernizr file -->
+<script src="../deck/modernizr.custom.js"></script>
+
+<script src="dom.js"></script>
+<script src="tabs.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    "use strict";
+
+    var $ = document.getElementById.bind(document);
+
+    // #one
+
+    $("one").addEventListener("click", function () {
+        alert(1);
+    });
+
+    // #two
+
+    var two = $("two");
+
+    two.addEventListener("click", function () {
+        alert("2: 1");
+    });
+
+    two.addEventListener("click", function () {
+        alert("2: 2");
+    });
+
+    // #three
+
+    $("three").addEventListener("click", function (e) {
+        alert(e);
+    });
+
+    // #four
+
+    var four = $("four");
+
+    four.addEventListener("click", function (e) {
+        alert("4: 1");
+        e.stopImmediatePropagation();
+    });
+
+    four.addEventListener("click", function (e) {
+        alert("4: 2");
+    });
+
+    // #five
+
+    $("five").addEventListener("click", function (e) {
+        e.preventDefault();
+    });
+
+    // #six
+
+    function f1() {
+        alert("6: 1");
+    }
+
+    function f2() {
+        alert("6: 2");
+    }
+
+    var six = $("six");
+
+    six.addEventListener("click", f1);
+    six.addEventListener("click", f2);
+    six.removeEventListener("click", f1);
+
+    // #seven
+
+    $("seven").addEventListener("click", function (e) {
+        alert(e.target.textContent);
+    });
+
+    // #eight
+
+    $("eight").addEventListener("click", function (e) {
+
+        if (e.target.matches("button")) {
+            alert(e.target.textContent);
+        }
+
+    });
+
+    // #nine
+
+    function starify(selector) {
+
+        return selector
+            .split(/\s*,\s*/)
+            .map(function (sel) {
+                return sel + " *," + sel;
+            })
+            .join(",");
+
+    }
+
+    function makeButton(text) {
+
+        var button = document.createElement("button");
+
+        button.type = "button";
+        button.textContent = text;
+
+        return button;
+
+    }
+
+    function addButton(parent) {
+        parent.appendChild(makeButton(Math.floor(Math.random() * 10000)));
+    }
+
+    var nine = $("nine");
+
+    nine.addEventListener("click", function (e) {
+
+        if (e.target.matches(starify("button"))) {
+            alert(e.target.textContent);
+        }
+
+    });
+
+    $("nine-button").addEventListener("click", function () {
+        addButton(nine);
+    });
+
+    // #ten
+
+    var con = {
+
+        log: function (msg) {
+
+            var message = document.createElement("p");
+
+            message.classList.add("console-text");
+            message.appendChild(document.createTextNode(msg));
+
+            this.render.insertBefore(message, this.render.firstChild);
+
+        }
+
+    };
+
+    var tenCon = Object.assign(Object.create(con), {
+        render: $("ten-console")
+    });
+
+    var tenOne = document.getElementById("ten-one");
+    tenOne.addEventListener("focus", function () {
+        tenCon.log("regular: " + this.name);
+    });
+
+    var tenTwo = document.getElementById("ten");
+    tenTwo.addEventListener("focus", function (e) {
+
+        if (e.target.matches("input")) {
+            tenCon.log("delegated: " + e.target.name);
+        }
+
+    }, true);
+
+    // #eleven
+
+    var elevenCon = Object.assign(Object.create(con), {
+        render: $("eleven-console")
+    });
+
+    var eleven = document.getElementById("eleven");
+    eleven.addEventListener("click", function (e) {
+
+        if (e.target.matches("button")) {
+            elevenCon.log("delegated: " + e.target.textContent);
+        }
+
+    });
+
+    var elevenOne = document.getElementById("eleven-one");
+    elevenOne.addEventListener("click", function (e) {
+        elevenCon.log("regular: " + e.target.textContent);
+        e.stopPropagation();
+    });
+
+    // #twleve
+
+    var twelve = document.getElementById("twelve");
+
+    twelve.addEventListener("mycustomevent", function (e) {
+        alert(e.type);
+    });
+
+    twelve.addEventListener("click", function () {
+
+        twelve.dispatchEvent(new Event("mycustomevent", {
+            bubbles: true,
+            cancelable: true
+        }));
+
+    });
+
+    $("twelve-two").addEventListener("click", function () {
+
+        twelve.dispatchEvent(new CustomEvent("click", {
+            bubbles: true,
+            cancelable: true
+        }));
+
+    });
+
+    // #thirteen
+
+    var thirteen = $("thirteen");
+    var thirteenCon = Object.assign(Object.create(con), {
+        render: $("thirteen-console")
+    });
+    var myTabs = Object.create(tabs);
+    myTabs.init(thirteen);
+
+    function logTab(e) {
+        thirteenCon.log(e.type + " event triggered on #" + e.target.id);
+    }
+
+    thirteen.addEventListener("tabenter", logTab);
+    thirteen.addEventListener("tableave", logTab);
+    thirteen.addEventListener("tabchange", logTab);
+
+    $("thirteen-killer").addEventListener("click", function () {
+
+        thirteenCon.log("Stopping Two from leaving.");
+        thirteen.addEventListener("tableave", function (e) {
+
+            if (e.target.matches("#tab-two")) {
+
+                thirteenCon.log("Nope!");
+                e.preventDefault();
+
+            }
+
+        });
+
+    });
+
+});
+</script>
+
+<link rel="stylesheet" type="text/css" href="tabs.css">
+<style>
+.console {
+    background-color: #FFF;
+    height: 4.8em;
+    overflow: auto;
+}
+
+.console-text {
+    font-family: monospace;
+    line-height: 1.2;
+    margin: 0;
+}
+</style>
+
+</head>
+<body>
+<div class="deck-container">
+
+    <section class="slide">
+        <h1>Events</h1>
+    </section>
+
+    <section class="slide">
+
+        <h2>What is an event?</h2>
+
+        <ul>
+            <li class="slide">They announce when <em>something</em> has happened.</li>
+            <li class="slide">They're the engine behind the publish/submit ("pub/sub") design pattern.</li>
+        </ul>
+
+        <div class="slide">
+
+            <p>Node.js has its own event engine that isn't bound to the Document Object Model (DOM).</p>
+            <p>There are also a few libraries that offer their own pub/sub model, but these events are either DOM events or a list of callbacks.</p>
+            <p>This lesson will focus on the events that are from the DOM and require an element.</p>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Listening to an event</h2>
+
+        <p>You've seen this pattern before.</p>
+
+        <pre><code>var element = document.getElementById("one");
+
+element.addEventListener("click", function () {
+    alert(1);
+});</code></pre>
+
+        <p><button type="button" id="one">#one</button></p>
+
+    </section>
+
+    <section class="slide">
+
+        <p>You can add multiple function ("handlers") to an event.</p>
+
+        <pre><code>var element = document.getElementById("two");
+
+element.addEventListener("click", function () {
+    alert("2: 1");
+});
+
+element.addEventListener("click", function () {
+    alert("2: 2");
+});</code></pre>
+
+        <p><button type="button" id="two">#two</button></p>
+
+    </section>
+
+    <section class="slide">
+
+        <p>The handler is passed an <strong>event object</strong> as the argument, giving you access to information about the event.</p>
+
+        <pre><code>var element = document.getElementById("three");
+
+element.addEventListener("click", function (e) { // &lt;-- e
+    alert(e);
+});</code></pre>
+
+        <p><button type="button" id="three">#three</button></p>
+
+        <div class="slide">
+
+            <p>The event argument has <a href="https://developer.mozilla.org/en-US/docs/Web/API/Event">a lot of useful properties</a>. Some of the more useful ones are listed here.</p>
+
+            <dl>
+
+                <dt><code>e.target</code> <small>Example: <code>&lt;button&gt;</code></small></dt>
+                <dd>The element that triggered the event.</dd>
+
+                <dt><code>e.timestamp</code> <small>Example: <code>1977394</code></small></dt>
+                <dd>The time that the event was started.</dd>
+
+                <dt><code>e.type</code> <small>Example: <code>"click"</code></small></dt>
+                <dd>The name of the event that was triggered.</dd>
+
+            </dl>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>The event object also has a lot of useful methods that change the way the event is working.</p>
+        <p>Always remember that using these methods <strong>cannot be undone</strong> but they can be wrapped in an <code>if</code> statement so they only occur when you need them to.</p>
+
+        <div class="slide">
+
+            <p>An example method: <code>e.stopImmediatePropagation()</code> will prevent all the subsequent event handlers bound to the event from executing.</p>
+
+            <pre><code>var element = document.getElementById("four");
+
+element.addEventListener("click", function (e) {
+    alert("4: 1");
+    e.stopImmediatePropagation();
+});
+
+element.addEventListener("click", function (e) {
+    alert("4: 2");
+});</code></pre>
+
+            <p><button type="button" id="four">#four</button></p>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Another really handy method is <code>e.preventDefault()</code> which stops the default action from happening.</p>
+
+        <pre><code>var link = document.getElementById("five");
+
+element.addEventListener("click", function (e) {
+    e.preventDefault();
+});</code></pre>
+
+        <p><a href="http://www.google.co.uk" id="five">www.google.co.uk (#five)</a></p>
+
+        <div class="slide">
+
+            <p>You might see some old jQuery code with <code>return false;</code> at the bottom to prevent the default action from occurring. This comes from the old DOM0 way of handling events.</p>
+
+            <pre><code>&lt;a href="#" onclick="return false"&gt;my link&lt;/a&gt;</code></pre>
+
+            <p>... or:</p>
+
+            <pre><code>&lt;a href="#" id="five-one"&gt;my link&lt;/a&gt;</code></pre>
+            <pre><code>var link = document.getElementById("five-one");
+link.onclick = function () {
+    return false;
+};</code></pre>
+
+            <p>If you see someone doing this then <strong>laugh at them</strong> - jQuery has <em>always</em> supported <code>e.preventDefault()</code> and IE8 was the last browser that didn't support it natively (but even IE8 has <code>e.returnValue = true</code>.</p>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>As well as adding handlers, you can remove them.</p>
+
+        <pre><code>function f1() {
+    alert("6: 1");
+}
+
+function f2() {
+    alert("6: 2");
+}
+
+var element = document.getElementById("six");
+
+element.addEventListener("click", f1);
+element.addEventListener("click", f2);
+element.removeEventListener("click", f1);</code></pre>
+
+        <p><button type="button" id="six">#six</button></p>
+
+        <div class="slide">
+
+            <p>A common gotcha is that you have to remove by <strong>reference</strong> not by appearance. Essentially, this will not work.</p>
+
+            <pre><code>var element = document.getElementById("six");
+
+element.addEventListener("click", function () {
+    alert("hello");
+});
+
+element.removeEventListener("click", function () {
+    alert("hello");
+});</code></pre>
+
+            <p>This often happens when trying to correct context with <code>.bind()</code> or wrapping the function to access <code>that</code>.</p>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Event delegation</h2>
+
+        <p>Imagine an image within a link and no padding. The markup would look like this.</p>
+
+        <pre><code>&lt;body&gt;
+    &lt;main&gt;
+        &lt;div&gt;
+            &lt;p&gt;
+                &lt;a href="#"&gt;
+                    &lt;span&gt;
+                        &lt;img src="path/to/image"&gt;
+                    &lt;/span&gt;
+                &lt;/a&gt;
+            &lt;/p&gt;
+        &lt;/div&gt;
+    &lt;/main&gt;
+&lt;/body&gt;</code></pre>
+
+        <p>Because there's no padding on the <code>&lt;img&gt;</code> or the <code>&lt;span&gt;</code>, it's not possible to click the <code>&lt;a&gt;</code>. You end up clicking the <code>&lt;img&gt;</code> ... which doesn't do anything.</p>
+
+        <div class="slide">
+
+            <p>Since clicking on the <code>&lt;img&gt;</code> doesn't do anything, the browser moves the event up the elements until it gets somewhere useful or gets to the <code>window</code>. This process is known as <strong>bubbling</strong>.</p>
+
+            <ul>
+                <li>User clicks <code>&lt;img&gt;</code></li>
+                <li>Event bubbles to <code>&lt;span&gt;</code></li>
+                <li>Event bubbles to <code>&lt;a&gt;</code> - browser prepares to navigate to <code>#</code></li>
+            </ul>
+
+        </div>
+
+        <div class="slide">
+
+            <p>The event keeps bubbling up to the top before the action takes place.</p>
+
+            <ul>
+                <li>Event bubbles to <code>&lt;p&gt;</code></li>
+                <li>Event bubbles to <code>&lt;div&gt;</code></li>
+                <li>Event bubbles to <code>&lt;main&gt;</code></li>
+                <li>Event bubbles to <code>&lt;body&gt;</code></li>
+                <li>Event bubbles to <code>&lt;html&gt;</code></li>
+                <li>Event bubbles to <code>document</code></li>
+                <li>Event bubbles to <code>window</code></li>
+            </ul>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>The allows us to listen for an event higher up the chain and delegate events.</p>
+        <p>Remember how I said that <code>e.target</code> is the element that triggered the event, not the element that has the event listener?</p>
+
+        <pre><code>var element = document.getElementById("seven");
+
+element.addEventListener("click", function (e) {
+    alert(e.target.textContent);
+});</code></pre>
+
+        <pre><code>&lt;div id="seven"&gt;
+    &lt;button type="button"&gt;Alpha&lt;/button&gt;
+    &lt;button type="button"&gt;Bravo&lt;/button&gt;
+    &lt;button type="button"&gt;Charlie&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+
+        <div id="seven">
+            <button type="button">Alpha</button>
+            <button type="button">Bravo</button>
+            <button type="button">Charlie</button>
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <pre><code>var element = document.getElementById("eight");
+
+element.addEventListener("click", function (e) {
+
+    if (e.target.matches("button")) {
+        alert(e.target.textContent);
+    }
+
+});</code></pre>
+
+        <pre><code>&lt;div id="eight"&gt;
+    &lt;button type="button"&gt;Delta&lt;/button&gt;
+    &lt;button type="button"&gt;Echo&lt;/button&gt;
+    &lt;button type="button"&gt;Foxtrot&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+
+        <p id="eight">
+            <button type="button">Delta</button>
+            <button type="button">Echo</button>
+            <button type="button">Foxtrot</button>
+        </p>
+
+        <div class="slide">
+
+            <p>To allow for any element within the button to be pressed (remember that an inner element may be the source) adjust the selector like this:</p>
+            <p><code>__selector__, __selector__ *</code></p>
+            <p>This can be done with a simple function.</p>
+
+            <pre><code>function starify(selector) {
+
+    return selector
+        .split(/\s*,\s*/)
+        .map(function (sel) {
+            return sel + " *," + sel;
+        })
+        .join(",");
+
+}
+
+// if (e.target.matches(starify("button"))) {</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>The great thing about event delegation is that it can appear to listen to events on elements that don't exist yet.</p>
+
+        <pre><code>var element = document.getElementById("nine");
+
+element.addEventListener("click", function (e) {
+
+    if (e.target.matches(starify("button"))) {
+        alert(e.target.textContent);
+    }
+
+});</code></pre>
+
+        <div id="nine"><button type="button">1234</button></div>
+        <p><button type="button" id="nine-button">+</button></p>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Some events go the other way through the DOM. This is known as "capturing". Very few events do this, but notable ones are "focus" and "blur".</p>
+        <p>You can listen for events the same way as bubbling ones, but when you delegate, you have to set the third argument in <code>addEventListener</code> (and <code>removeEventListener</code>) should be set to <code>true</code>.</p>
+
+        <pre><code>var input1 = document.getElementById("ten-one");
+input1.addEventListener("focus", function () {
+    console.log("regular: " + this.name);
+});
+
+var div = document.getElementById("ten");
+div.addEventListener("focus", function (e) {
+
+    if (e.target.matches("input")) {
+        console.log("delegated: " + e.target.name);
+    }
+
+}, true); // &lt;-- true</code></pre>
+
+        <pre><code>&lt;div id="ten"&gt;
+    &lt;input name="ten-one" id="ten-one" placeholder="ten-one"&gt;
+    &lt;input name="ten-two" placeholder="ten-two"&gt;
+    &lt;input name="ten-three" placeholder="ten-three"&gt;
+&lt;/div&gt;</code></pre>
+
+        <p id="ten">
+            <input name="ten-one" id="ten-one" placeholder="ten-one">
+            <input name="ten-two" placeholder="ten-two">
+            <input name="ten-three" placeholder="ten-three">
+        </p>
+
+        <div id="ten-console" class="console">
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>To stop the bubbling or capturing process you can use <code>e.stopPropagation()</code>.</p>
+
+        <pre><code>var button = document.getElementById("eleven");
+button.addEventListener("click", function (e) {
+
+    if (e.target.matches("button")) {
+        console.log("delegated: " + e.target.textContent);
+    }
+
+});
+
+var button = document.getElementById("eleven-one");
+button.addEventListener("click", function (e) {
+    console.log("regular: " + e.target.textContent);
+    e.stopPropagation();
+});</code></pre>
+
+        <pre><code>&lt;div id="eleven"&gt;
+    &lt;button type="button" id="eleven-one"&gt;Button one&lt;/button&gt;
+    &lt;button type="button" id="eleven-two"&gt;Button two&lt;/button&gt;
+    &lt;button type="button" id="eleven-three"&gt;Button three&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+
+        <p id="eleven">
+            <button type="button" id="eleven-one">Button one</button>
+            <button type="button" id="eleven-two">Button two</button>
+            <button type="button" id="eleven-three">Button three</button>
+        </p>
+
+        <div id="eleven-console" class="console">
+        </div>
+
+        <p class="slide"><code>return false;</code> in jQuery handlers also does this.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Quick even method summary</h2>
+
+        <ul>
+            <li><code>e.preventDefault()</code> prevents the default action from occurring.</li>
+            <li><code>e.stopPropagation()</code> prevents the events from bubbling up or capturing down the DOM.</li>
+            <li><code>e.stopImmediatePropagation()</code> prevents subsequent handlers bound to an event from executing.</li>
+        </ul>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Custom events</h2>
+
+        <p>Custom events are useful for letter other developers know when something has happened in your script or application.</p>
+        <p>You can listen to custom events in the same way as native ones - <code>addEventListener</code>.</p>
+
+        <pre><code>var button = document.getElementById("twelve");
+
+button.addEventListener("mycustomevent", function (e) {
+    alert(e.type);
+});
+
+button.addEventListener("click", function () {
+
+    button.dispatchEvent(new CustomEvent("mycustomevent", {
+        bubbles: true,
+        cancelable: true
+    }));
+
+});</code></pre>
+
+        <p><button type="button" id="twelve">#twelve</button></p>
+
+        <div class="slide">
+
+            <p>You can also trigger native events using this same process.</p>
+
+            <pre><code>var button2 = document.getElementById("twelve-two");
+
+button2.addEventListener("click", function () {
+
+    button.dispatchEvent(new CustomEvent("click", {
+        bubbles: true,
+        cancelable: true
+    }));
+
+});</code></pre>
+
+            <p><button type="button" id="twelve-two">#twelve-two</button></p>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>... but <strong>don't trigger native events</strong> or, at least, don't trigger custom events with native event names.</p>
+
+        <div class="slide">
+
+            <p>This is a common problem when trying to activate the functionality bound to a certain element, like making the first tab visible or setting the text on a custom dropdown.</p>
+
+            <pre><code>var tabs = document.getElementById("tabs");
+
+tabs.addEventListener("click", function (e) {
+
+    if (e.target.matches(starify(".tab"))) {
+        somehowShowTab();
+    }
+
+});
+
+// Make first tab visible.
+tabs.querySelector(".tab")
+    .dispatchEvent(new CustomEvent("click", {
+        bubbles: true,
+        cancelable: true
+    }));</code></pre>
+
+            <div class="slide">
+
+                <p>The problem is that there may be other things listening out for that native event and we'd give it false readings.</p>
+
+                <pre><code>document.body.addEventListener("click", function (e) {
+
+    if (someConditionMatches(e)) {
+
+        doSomethingDramatic();
+        maybeSomeAjaxCall();
+
+    }
+
+});</code></pre>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>If you want to do this, bind the same function to multiple events, including a custom one. You can then trigger that without any collision problems.</p>
+
+        <pre><code>var tabs = document.getElementById("tabs");
+
+function handleTabClick(e) {
+
+    if (e.target.matches(starify(".tab"))) {
+        somehowShowTab();
+    }
+
+}
+
+tabs.addEventListener("click", handleTabClick);
+tabs.addEventListener("tabs-click", handleTabClick);
+
+// Make first tab visible.
+tabs.querySelector(".tab")
+    .dispatchEvent(new CustomEvent("tabs-click", {
+        bubbles: true,
+        cancelable: true
+    }));</code></pre>
+
+        <div class="slide">
+
+            <p>This is even easier in jQuery:</p>
+
+            <pre><code>$("#tabs")
+    .on("click tabs-click", ".tab", function () {
+        somehowShowTab();
+    })
+    .find(".tab")
+    .eq(0)
+    .trigger("tabs-click");</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Triggering a custom event in Firefox or Chrome is very easy - there's a really useful <code>CustomEvent</code> constructor.</p>
+
+        <div class="slide">
+            <p>Internet Explorer doesn't have <code>CustomEvent</code>.</p>
+            <p>Polyfills are hundreds of lines long - find a good library or polyfill.</p>
+        </div>
+
+        <div class="slide">
+
+            <p>Creating a custom event just involves executing the <code>CustomEvent</code> constructor. Pass it the event name and whether it bubbles and can be cancelled.</p>
+
+            <pre><code>var myEvent = new CustomEvent("mycustomevent", {
+    bubbles: true,
+    cancelable: true
+});</code></pre>
+
+            <p>You then trigger it on an element using the <code>dispatchEvent</code> method.</p>
+
+            <pre><code>var element = document.getElementById("an-id");
+element.dispatchEvent(myEvent);</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>When should you trigger a custom event?</h2>
+
+        <div class="slide">
+
+            <p><strong>Whenever something interesting happens.</strong></p>
+            <p class="slide">You should probably use them a lot more than you are. Don't be afraid to trigger events that you aren't using at the moment. It may be handy in the future.</p>
+
+            <div class="slide">
+
+                <p>Things to consider when triggering a custom event:</p>
+                <ul>
+                    <li class="slide">Is there a native event already being triggered?</li>
+                    <li class="slide">What does this event mean (what should it be called).</li>
+                    <li class="slide">What would calling <code>e.preventDefault()</code> do?</li>
+                </ul>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <section class="tabs" id="thirteen">
+
+            <ul class="tabs-tabs">
+                <li><a href="#tab-one" class="tabs-tab js-tabs-tab">One</a></li>
+                <li><a href="#tab-two" class="tabs-tab js-tabs-tab">Two</a></li>
+                <li><a href="#tab-three" class="tabs-tab js-tabs-tab">Three</a></li>
+            </ul>
+
+            <article class="tabs-panel" id="tab-one">
+                <p>1. Tab content one</p>
+            </article>
+
+            <article class="tabs-panel" id="tab-two">
+                <p>2. Tab content two</p>
+            </article>
+
+            <article class="tabs-panel" id="tab-three">
+                <p>3. Tab content three</p>
+            </article>
+
+        </section>
+
+        <div class="slide">
+
+            <div id="thirteen-console" class="console"></div>
+
+            <dl class="slide">
+
+                <dt><code>tableave</code></dt>
+                <dd>Triggered on the panel that is to be hidden. Calling <code>e.preventDefault()</code> will stop the the panel leaving and the next one appearing.</dd>
+
+                <dt><code>tabenter</code></dt>
+                <dd>Triggered on the panel that is to be shown. Calling <code>e.preventDefault()</code> will stop the panel from being show.</dd>
+
+                <dt><code>tabchange</code></dt>
+                <dd>Triggered after a tab has successfully changed. Calling <code>e.preventDefault()</code> does nothing.</dd>
+
+            </dl>
+
+            <div class="slide">
+
+                <pre><code>var button = document.getElementById("thirteen-killer");
+
+button.addEventListener("click", function () {
+
+    var tabs = document.getElementById("thirteen");
+
+    tabs.addEventListener("tableave", function (e) {
+
+        if (e.target.matches("#tab-two")) {
+            e.preventDefault();
+        }
+
+    });
+
+});</code></pre>
+
+                <p><button type="button" id="thirteen-killer">Stop "Two" leaving</button></p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>You can pass custom information to the <code>CustomEvent</code> constructor by giving the <code>detail</code> property a value. The information can be anything you feel like passing.</p>
+
+        <pre><code>new CustomEvent("one", {
+    bubbles: true,
+    cancelable: true,
+    detail: true
+});
+
+new CustomEvent("two", {
+    bubbles: true,
+    cancelable: true,
+    detail: {
+        foo: 1,
+        bar: 2
+    }
+});</code></pre>
+
+        <div class="slide">
+
+            <p>To get that information into your event listeners, just access <code>e.detail</code> - it's read-only so you can't break it.</p>
+
+            <pre><code>myElement.addEventListener("two", function (e) {
+
+    console.log(e.detail);
+    // -> { foo: 1, bar : 2 }
+
+});</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Useful Custom Events</h2>
+
+        <p>If you're wandering where you can take advantage of custom events, here are a couple that I use a fair bit.</p>
+
+        <div class="slide">
+
+            <p>How about an event that triggers when the browser changes break point sizes, rather than just any size?</p>
+
+            <pre><code>window.addEventListener("sizechange", function (e) {
+
+    var detail = e.details;
+
+    if (detail.size === detail.sizes.XS) {
+        doSomethingWithXS();
+    }
+
+});</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Being able to pass custom information around, we can do clever things like abstract away AJAX calls, keeping our application loosely-coupled.</p>
+        <p>Just imagine that we have this kind of setup:</p>
+
+        <pre><code>function trigger(element, name, detail) {
+
+    element.dispatchEvent(new CustomEvent(name, {
+        bubbles: true,
+        cancelable: true,
+        detail: detail;
+    }));
+
+}
+
+var element = document.getElementById("container");
+
+element.addEventListener("async-start", function () {
+    element.classList.add("is-loading");
+});
+
+element.addEventListener("async-stop", function () {
+    element.classList.remove("is-loading");
+});
+
+element.addEventListener("async-success", function (e) {
+    element.innerHTML = e.details;
+});
+
+trigger(element, "async-request", {
+    // detail ...
+});</code></pre>
+
+    </section>
+    <section class="slide">
+
+        <pre><code>document.addEventListener("async-request", function (e) {
+
+    var xhr = new XmlHttpRequest();
+    var detail = e.detail;
+    var source = e.target;
+
+    xhr.onreadystatechange = function () {
+
+        var resp = xhr.responseText;
+
+        if (xhr.readyState === 4) {
+
+            trigger(source, "async-stop");
+
+            if (resp === "null") {
+                trigger(source, "async-error", resp);
+            } else {
+                trigger(source, "async-success", resp);
+            }
+
+        }
+
+    };
+
+    trigger(source, "async-start");
+    xhr.open("GET", detail.url, true);
+    xhr.send(detail.data);
+
+});</code></pre>
+
+        <div class="slide">
+
+            <pre><code>document.addEventListener("async-request", function (e) {
+
+    var detail = e.detail;
+    var source = e.target;
+
+    trigger(source, "async-start");
+
+    window.setTimeout(function () {
+
+        trigger(source, "async-stop");
+        trigger(source, "async-success", "&lt;p&gt;success&lt;/p&gt;");
+
+    }, Math.floor(Math.random() * 3000));
+
+});</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>One of the most useful custom events that I use a lot is this piece of jQuery:</p>
+
+        <pre><code>$.extend($.validator.defaults, {
+
+    highlight: function (element, errorClass, successClass) {
+
+        element
+            .addClass(errorClass)
+            .removeClass(successClass)
+            .trigger("invalid");
+
+    }
+
+    unhighlight: function (element, errorClass, successClass) {
+
+        element
+            .removeClass(errorClass)
+            .addClass(successClass)
+            .trigger("valid");
+
+    }
+
+});</code></pre>
+
+    </section>
+
+
+    <section class="slide">
+        <h1>Any questions?</h1>
+    </section>
+
+    <!-- deck.navigation snippet -->
+    <div aria-role="navigation">
+        <a href="#" class="deck-prev-link" title="Previous">&#8592;</a>
+        <a href="#" class="deck-next-link" title="Next">&#8594;</a>
+    </div>
+
+    <!-- deck.status snippet -->
+    <p class="deck-status" aria-role="status">
+        <span class="deck-status-current"></span>
+        /
+        <span class="deck-status-total"></span>
+    </p>
+
+    <!-- deck.goto snippet -->
+    <form action="." method="get" class="goto-form">
+        <label for="goto-slide">Go to slide:</label>
+        <input type="text" name="slidenum" id="goto-slide" list="goto-datalist">
+        <datalist id="goto-datalist"></datalist>
+        <input type="submit" value="Go">
+    </form>
+
+    <!-- End extension snippets. -->
+</div>
+
+<!-- Required JS files. -->
+<script src="../deck/jquery.min.js"></script>
+<script src="../deck/core/deck.core.js"></script>
+
+<!-- Extension JS files. Add or remove as needed. -->
+<script src="../deck/extensions/menu/deck.menu.js"></script>
+<script src="../deck/extensions/goto/deck.goto.js"></script>
+<script src="../deck/extensions/status/deck.status.js"></script>
+<script src="../deck/extensions/navigation/deck.navigation.js"></script>
+<script src="../deck/extensions/scale/deck.scale.js"></script>
+
+<!-- Initialize the deck. You can put this in an external file if desired. -->
+<script>
+$(function() {
+    $.deck('.slide');
+});
+</script>
+</body>
+</html>
