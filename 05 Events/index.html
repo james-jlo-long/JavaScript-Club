@@ -1019,7 +1019,35 @@ new CustomEvent("two", {
 
     <section class="slide">
 
-        <p>Being able to pass custom information around, we can do clever things like abstract away AJAX calls, keeping our application loosely-coupled.</p>
+        <p>One of the most useful custom events that I use a lot is this piece of jQuery:</p>
+
+        <pre><code>$.extend($.validator.defaults, {
+
+    highlight: function (element, errorClass, successClass) {
+
+        element
+            .addClass(errorClass)
+            .removeClass(successClass)
+            .trigger("invalid");
+
+    }
+
+    unhighlight: function (element, errorClass, successClass) {
+
+        element
+            .removeClass(errorClass)
+            .addClass(successClass)
+            .trigger("valid");
+
+    }
+
+});</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Since we're able to pass custom information around, we can do clever things like abstract away AJAX calls, keeping our application loosely-coupled.</p>
         <p>Just imagine that we have this kind of setup:</p>
 
         <pre><code>function trigger(element, name, detail) {
@@ -1105,33 +1133,7 @@ trigger(element, "async-request", {
 
     </section>
 
-    <section class="slide">
 
-        <p>One of the most useful custom events that I use a lot is this piece of jQuery:</p>
-
-        <pre><code>$.extend($.validator.defaults, {
-
-    highlight: function (element, errorClass, successClass) {
-
-        element
-            .addClass(errorClass)
-            .removeClass(successClass)
-            .trigger("invalid");
-
-    }
-
-    unhighlight: function (element, errorClass, successClass) {
-
-        element
-            .removeClass(errorClass)
-            .addClass(successClass)
-            .trigger("valid");
-
-    }
-
-});</code></pre>
-
-    </section>
 
 
     <section class="slide">
