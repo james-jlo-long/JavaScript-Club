@@ -8,6 +8,7 @@ A series of lessons to improve existing JavaScript knowledge.
 - 02: [Variables and Scope](https://james-jlo-long.github.io/JavaScript-Club/02%20Scope/)
 - 03: [Context](https://james-jlo-long.github.io/JavaScript-Club/03%20Context/)
 - 04: [Inheritance](https://james-jlo-long.github.io/JavaScript-Club/04%20Inheritance/)
+- 05: [Events](https://james-jlo-long.github.io/JavaScript-Club/05%20Events/)
 
 ## Software Used
 
