@@ -276,9 +276,9 @@ getScript("/lib/jQuery.js").then(function () {
     $; // <-- jQuery
 });
 
-getScript(["/lib/jQuery.js", "/lib/jQuery.ui.js"]).then(function () {
-    $;    // <-- jQuery
-    $.ui; // <-- jQuery UI
+getScript(["/lib/jQuery.js", "/lib/underscore.js"]).then(function () {
+    $; // <-- jQuery
+    _; // <-- Underscore
 });
 
 /*
@@ -393,3 +393,72 @@ Currently untied to Promises
     });
 
 }(window));
+
+
+/*
+Integrate promises
+ */
+
+var modules = {};
+var promises = {};
+
+function define(name, requires, factory) {
+    modules[name] = require(requires, factory);
+}
+
+function getModule(url, callback) {
+
+    if (!promises[url]) {
+
+        promises[url] = new Promise(function (resolve, reject) {
+
+            getScript(url).then(function () {
+                resolve(modules[url]);
+            });
+
+        });
+
+    }
+
+    if (typeof callback === "function") {
+        promises[url].then(callback);
+    }
+
+    return promises[url];
+
+}
+
+getModule("/lib/jQuery.js", function ($) {
+    $; // <-- jQuery
+});
+
+function getModule(url, callback) {
+
+    var promise;
+
+    if (Array.isArray(url)) {
+
+        promise = Promise.all(url.map(u => getModule(u)));
+
+    } else {
+
+        promise = promises[url];
+
+        if (!promise) {
+            // ...
+        }
+
+    }
+
+    if (typeof callback === "function") {
+        promise.then(callback);
+    }
+
+    return promise;
+
+}
+
+getModule(["/lib/jQuery.js", "/lib/underscore.js"], function ($, _) {
+    $; // <-- jQuery
+    _; // <-- Underscore
+});
