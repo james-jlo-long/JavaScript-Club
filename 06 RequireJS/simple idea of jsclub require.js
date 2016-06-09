@@ -69,11 +69,11 @@ if (!window.Promise) {
 
             },
 
-            complete: function (reason, data) {
+            complete: function (state, data) {
 
                 if (!this.state) {
 
-                    this.state = reason;
+                    this.state = state;
                     this.data = data;
 
                     this.callbacks.forEach(function (pair) {
@@ -218,6 +218,23 @@ if (!window.Promise) {
     }());
 
 }
+
+// good for testing promises
+function resolveAfter(time) {
+
+    return new Promise(function (resolve) {
+
+        window.setTimeout(function () {
+            console.log("resolved after %d ms", time);
+            resolve(time);
+        }, time);
+
+    });
+
+}
+Promise.race([resolveAfter(500), resolveAfter(1000), resolveAfter(2000), Promise.resolve("auto resolve")]).then(console.info.bind(console), console.error.bind(console));
+Promise.all([ resolveAfter(500), resolveAfter(1000), resolveAfter(2000), Promise.resolve("auto resolve")]).then(console.info.bind(console), console.error.bind(console));
+
 
 var cache = {};
 
