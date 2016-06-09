@@ -280,3 +280,116 @@ getScript(["/lib/jQuery.js", "/lib/jQuery.ui.js"]).then(function () {
     $;    // <-- jQuery
     $.ui; // <-- jQuery UI
 });
+
+/*
+Define modules
+Currently untied to Promises
+ */
+
+(function (namespace) {
+
+    "use strict";
+
+    var modules = {};
+
+    function getModule(name) {
+
+        return Object.prototype.hasOwnProperty.call(modules, name)
+            ? modules[name]
+            : undefined;
+
+    }
+
+    /**
+     *  require(names, callback) -> ?
+     *  - names (String|Array): Name(s) of the module(s) to get.
+     *  - callback (Function): Function to execute once all modules are found.
+     *
+     *  Accesses modules and passes them all to the given `callback`. Modules
+     *  become the `callback` arguments in the order they were requested.
+     *
+     *      require(["one", "two"], function (one, two) {
+     *          // one = Module "one"
+     *          // two = Module "two"
+     *      });
+     *
+     *  For including a single module, a string can be passed instead of an
+     *  array.
+     *
+     *      require("one", function (one) {
+     *          // one = Module "one"
+     *      });
+     *
+     *  Modules that aren't found are still included in the arguments, but they
+     *  reference `undefined`.
+     *
+     *      require(["one", "NOT-REAL", "two"], function (one, _, two) {
+     *          // one = Module "one"
+     *          // _ = undefined
+     *          // two = Module "two"
+     *      });
+     *
+     *  To create a module, use [[define]].
+     **/
+    function require(names, callback) {
+
+        var requests = Array.isArray(names)
+            ? names
+            : [names];
+
+        //return callback(...requests.map(getModule));
+        return callback.apply(undefined, requests.map(getModule));
+
+    };
+
+    /**
+     *  define(name[, requires], factory)
+     *  - name (String): Name of the module to define.
+     *  - requires (String|Array): Required dependancy(ies).
+     *  - factory (Function): Function to create the module.
+     *
+     *  Defines a module. The `factory` method is executed, passing in any
+     *  `requires` (if they were provided) and creates the module. Be warned
+     *  that `factory` is executed as soon as the module is defined.
+     *
+     *      define("foo", function () {
+     *          return {
+     *              foo: true
+     *          };
+     *      });
+     *
+     *  With the example above, a "foo" module is defined, an object with the
+     *  property `"foo"` set to `true`. This can now be accessed by any other
+     *  module.
+     *
+     *  If a value is passed to the `requires` argument, it is treated in the
+     *  same way as [[require]]:
+     *
+     *      define("bar", ["foo"], function (foo) {
+     *          return {
+     *              bar: true && foo.foo
+     *          };
+     *      });
+     *
+     *  The `factory` argument has to be a function, but it can return anything
+     *  (including nothing at all).
+     **/
+    function define(name, requires, factory) {
+
+        if (typeof requires === "function") {
+
+            factory  = requires;
+            requires = [];
+
+        }
+
+        modules[name] = require(requires, factory);
+
+    };
+
+    Object.assign(namespace, {
+        require: require,
+        define: define
+    });
+
+}(window));
