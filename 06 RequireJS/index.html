@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=1024, user-scalable=no">
+
+<title>RequireJS</title>
+
+<!-- Required stylesheet -->
+<link rel="stylesheet" media="screen" href="../deck/core/deck.core.css">
+
+<!-- Extension CSS files go here. Remove or add as needed. -->
+<link rel="stylesheet" media="screen" href="../deck/extensions/goto/deck.goto.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/menu/deck.menu.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/navigation/deck.navigation.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/status/deck.status.css">
+<link rel="stylesheet" media="screen" href="../deck/extensions/scale/deck.scale.css">
+
+<!-- Style theme. More available in /themes/style/ or create your own. -->
+<link rel="stylesheet" media="screen" href="../deck/themes/style/web-2.0.css">
+
+<!-- Transition theme. More available in /themes/transition/ or create your own. -->
+<link rel="stylesheet" media="screen" href="../deck/themes/transition/horizontal-slide.css">
+
+<!-- Basic black and white print styles -->
+<link rel="stylesheet" media="print" href="../deck/core/print.css">
+
+<!-- Required Modernizr file -->
+<script src="../deck/modernizr.custom.js"></script>
+
+
+
+</head>
+<body>
+<div class="deck-container">
+
+    <section class="slide">
+        <h1>RequireJS</h1>
+    </section>
+
+    <section class="slide">
+
+        <h2>JavaScript Libraries</h2>
+
+        <p>I don't like talking about libraries in JavaScript Club.</p>
+        <p class="slide">Libraries won't last forever and I think it's better to understand the code behind them because you learn skills that can be used with any library.</p>
+        <p class="slide">That being said, <a href="http://requirejs.org/">RequireJS</a> has a few interesting properties that we can discuss without becoming too library-specific.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>So what will I explain?</h2>
+
+        <ol>
+            <li class="slide">Promises <small>(not part of RequireJS, but they help some of the code)</small>.</li>
+            <li class="slide">Dynamic Script Inclusion</li>
+            <li class="slide">Modular JavaScript</li>
+        </ol>
+
+    </section>
+
+    <section class="slide">
+        <h1>Promises</h1>
+    </section>
+
+    <section class="slide">
+
+        <h2>What is a Promise?</h2>
+
+        <div class="slide">
+
+            <p>They are an object that helps manage asynchronous operations.</p>
+
+            <div class="slide">
+
+                <p>The idea is that your application needs to access information or perform an action asynchronously. You don't know when that action will complete but you <em>do</em> know what you need to do when it completes.</p>
+                <p>A <code>Promise</code> will allow you to define functions to execute when it's <strong>resolved</strong> or <strong>rejected</strong>, storing the functions if it needs to and executing the functions as soon as it can - even if it's given functions after it's completed.</p>
+
+                <p class="slide"><code>Promise</code>s are really abstract and difficult to understand without an example. I'll show you a version to explain roughly what they do - this <strong>is not</strong> a complete polyfill (there are much better ones online) but should help you understand them.</p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>What a promise looks like:</p>
+
+        <pre><code>var Promise = function (handler) {
+
+    this.callbacks = [];
+
+    try {
+
+        handler(
+            this.complete.bind(this, "fulfilled"),
+            this.complete.bind(this, "rejected")
+        );
+
+    } catch (ex) {
+        this.complete("rejected", "Error: " + ex.message);
+    }
+
+};
+
+Promise.prototype.complete = function (state, data) {
+
+    if (!this.state) {
+
+        this.state = state;
+        this.data = data;
+
+        this.callbacks.forEach(function (pair) {
+            this.then(pair[0], pair[1]);
+        }, this);
+
+    }
+
+};</code></pre>
+
+        <p>How you'd use it:</p>
+
+        <pre><code>var promise = new Promise(function (resolve, reject) {
+
+    window.setTimeout(function () {
+        resolve("information");
+    }, 1000);
+
+});</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <pre><code>Promise.prototype.then = function (onFulfilled, onRejected) {
+
+    switch (this.state) {
+
+    case "fulfilled":
+
+        if (typeof onFulfilled === "function") {
+            onFulfilled(this.data);
+        }
+
+        break;
+
+    case "rejected":
+
+        if (typeof onRejected === "function") {
+            onRejected(this.data);
+        }
+
+        break;
+
+    default:
+
+        this.callbacks.push([
+            onFulfilled,
+            onRejected
+        ]);
+
+    }
+
+    return this;
+
+};
+
+Promise.prototype.catch = function (onRejected) {
+    return this.then(undefined, onRejected);
+};</code></pre>
+
+        <pre><code>promise.then(function (data) {
+    console.log(data);
+});
+// logs "information" after 1 second</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Promises have four utility methods:</p>
+        <ul>
+            <li><code>Promise.resolve</code></li>
+            <li><code>Promise.reject</code></li>
+            <li><code>Promise.all</code></li>
+            <li><code>Promise.race</code></li>
+        </ul>
+
+        <pre class="slide"><code>Promise.resolve = function (data) {
+
+    return new Promise(function (resolve) {
+        resolve(data);
+    });
+
+};
+
+Promise.reject = function (reason) {
+
+    return new Promise(function (ignore, reject) {
+        reject(reason);
+    });
+
+};</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <pre><code>Promise.all = function (promises) {
+
+    return new Promise(function (resolve, reject) {
+
+        var count = promises.length;
+        var completed = 0;
+        var hasExecuted = false;
+        var resolvedData = [];
+
+        promises.forEach(function (promise, i) {
+
+            promise.then(function (data) {
+
+                completed += 1;
+                resolvedData[i] = data;
+
+                if (!hasExecuted && completed === count) {
+
+                    hasExecuted = true;
+                    resolve(resolvedData);
+
+                }
+
+            }, function (reason) {
+
+                if (!hasExecuted) {
+
+                    hasExecuted = true;
+                    reject(reason);
+
+                }
+
+            });
+
+        });
+
+    });
+
+};</code></pre>
+
+        <pre><code>Promise.all([
+    Promise.resolve(1),
+    Promise.resolve(2),
+    Promise.resolve(3)
+]).then(function (a, b, c) {
+    console.log(a + b + c);
+});
+// logs 6 because 1 + 2 + 3 = 6
+// logs immediately because all promises are resolved</code></pre>
+
+        <p class="slide"><code>Promise.race</code> is the same as <code>Promise.all</code> except that the returned promise resolves as soon as any of the give promises resolve.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>Availability</h2>
+
+        <ul>
+            <li>Chrome (32+)</li>
+            <li>Firefox (29+)</li>
+            <li>IE Edge (not 11-)</li>
+            <li>Safari (7.1+)</li>
+        </ul>
+
+        <p>Polyfills are easy and freely available - find a highly rated one.</p>
+
+        <div class="slide">
+
+            <h2>When should you use a <code>Promise</code>?</h2>
+
+            <p>Any time you want to access asynchronous data (AJAX, dynamic script inclusion, timeouts etc.) - there's no good reason not to use them.</p>
+            <p>From version 1.5, jQuery started using their own version of a <code>Promise</code> (<a href="https://api.jquery.com/category/deferred-object/"><code>$.Deferred</code></a>) for AJAX and effects.</p>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+        <h1>Dynamic Script Inclusion</h1>
+    </section>
+
+    <section class="slide">
+
+        <p>The mentality behind this technique is to asynchronously load a large script file (or series of small script files) in a non-blocking way.</p>
+        <p>Including a <code>&lt;script&gt;</code> tag on a page causes the page to stop rendering to resolve that <code>&lt;script&gt;</code> tag - dynamically adding one to the <code>&lt;head&gt;</code> or <code>&lt;body&gt;</code> allows the page to render without waiting for the <code>&lt;script&gt;</code> tag to load first.</p>
+
+        <div class="slide">
+
+            <p>A basic function to do that looks like this:</p>
+
+            <pre><code>function includeScript(url, success, error) {
+
+    var script = document.createElement("script");
+
+    script.src = url;
+    script.type = "text/javascript";
+    script.async = true;
+
+    if (typeof success === "function") {
+        script.onload = success;
+    }
+
+    if (typeof error === "function") {
+        script.onerror = error;
+    }
+
+    document.head.appendChild(script);
+
+}</code></pre>
+
+            <p>You use it like this:</p>
+
+            <pre><code>includeScript("/lib/jQuery.js", function () {
+    $; // &lt;-- jQuery
+});</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>The problem is that calling that again will attempt to load the script a second time (and probably succeed, but the script might not be expecting that).</p>
+
+        <div class="slide">
+
+            <p>We can cache a <code>Promise</code> to get around that issue.</p>
+
+            <pre><code>var cache = {};
+
+function getScript(url) {
+
+    if (!cache[url]) {
+
+        cache[url] = new Promise(function (resolve, reject) {
+            includeScript(url, resolve, reject);
+        });
+
+    }
+
+    return cache[url];
+
+}</code></pre>
+
+            <pre><code>getScript("/lib/jQuery.js").then(function () {
+    $; // &lt;-- jQuery
+});
+
+getScript("/lib/jQuery.js").then(function () {
+    $; // &lt;-- jQuery, but from cache
+});</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>We can upgrade this again by allowing the user to request multiple script files at once.</p>
+
+        <pre><code>function getScript(url) {
+
+    var promise;
+
+    if (Array.isArray(url)) {
+        promise = Promise.all(url.map(getScript));
+    } else {
+
+        promise = cache[url];
+
+        if (!promise) {
+
+            promise = new Promise(function (resolve, reject) {
+                includeScript(url, resolve, reject);
+            });
+            cache[url] = promise;
+
+        }
+
+    }
+
+    return promise;
+
+}</code></pre>
+
+        <pre><code>getScript("/lib/jQuery.js").then(function () {
+    $; // &lt;-- jQuery
+});
+
+getScript(["/lib/jQuery.js", "/lib/underscore.js"]).then(function () {
+    $; // &lt;-- jQuery (from cache)
+    _; // &lt;-- Underscore
+});</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>When should you use it?</h2>
+
+        <p>Use it when you need to access functionality as-and-when. You might not need everything on every page but you might need to be able to access validation methods, for example.</p>
+        <p class="slide">Use it <strong>carefully</strong> (ever had to work on Acal JavaScript? <small>I am so sorry</small>)</p>
+
+    </section>
+
+    <section class="slide">
+        <h1>Modular JavaScript</h1>
+    </section>
+
+    <section class="slide">
+
+        <p>This is not the same as JavaScript modules (which only work in Node.js) but this is a helpful technique for creating modular code.</p>
+
+        <div class="slide">
+
+            <p>The technique is to create a cache of modules and a simple way of getting and setting them (<code>require</code> and <code>define</code>).</p>
+
+            <pre><code>var modules = {};
+
+function require(names, callback) {
+
+    var requests = Array.isArray(names)
+        ? names
+        : [names];
+
+    return callback.apply(
+        undefined,
+        requests.map(function (module) {
+            return modules[name];
+        })
+    );
+
+}
+
+function define(name, requires, factory) {
+
+    if (typeof requires === "function") {
+
+        factory  = requires;
+        requires = [];
+
+    }
+
+    modules[name] = require(requires, factory);
+
+}</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>To use it, define a module</p>
+
+        <pre><code>define("names", function () {
+
+    return {
+        first: "James",
+        last: "Long",
+        alias: "JLo"
+    };
+
+});</code></pre>
+
+        <div class="slide">
+
+            <p>That can be accessed using <code>require</code>.</p>
+
+            <pre><code>require("names", function (names) {
+    console.log(names.alias);
+});
+// logs "JLo"</code></pre>
+
+            <div class="slide">
+
+                <p>... or we can declare it as a dependancy of another module.</p>
+
+                <pre><code>define("details", "names", function (names) {
+
+    return Object.assign({}, names, {
+        age: 31
+    });
+
+});</code></pre>
+
+                <pre><code>require("details", function (details) {
+
+    console.log(
+        "%s is %d years old",
+        details.alias,
+        details.age
+    );
+
+});
+// logs "JLo is 31 years old"</code></pre>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>We can expand that using our <code>getScript</code> to get modules we haven't requested yet.</p>
+
+        <pre><code>var gotten = {};
+
+function getModule(name) {
+
+    if (!gotten[url]) {
+
+        gotten[url] = new Promise(function (resolve) {
+
+            getScript(url).then(function () {
+                resolve(defined[url]);
+            });
+
+        });
+
+    }
+
+    return gotten[url];
+
+}
+
+function require(names, callback) {
+
+    var requests = Array.isArray(names)
+        ? names
+        : [names];
+
+    return Promise
+        .all(requests.map(getModule))
+        .then(callback);
+
+}</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+            <p>Does this look familiar yet?</p>
+
+            <pre><code>// http://www.example.com/lib/util.js
+define(
+    "/lib/util.js",
+    ["/lib/util/Array.js", "/lib/util/String.js"],
+    function (array, string) {
+
+        return {
+            Array: array,
+            String: string
+        };
+
+    }
+);</code></pre>
+
+            <pre><code>require("/lib/util.js", function (util) {
+    util.Array;
+    util.String;
+});</code></pre>
+
+        <p class="slide">That is the essence of <strong>RequireJS</strong>.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <h2>RequireJS does a lot more</h2>
+
+        <ul>
+            <li>Modules aren't fully defined until they're used, allowing them to be extended.</li>
+            <li>Modules can be defined without having to be tied to a script tag (although I'd recommend that they always are).</li>
+            <li>Modules that fail to load are handled.</li>
+            <li>Module names are automatically defined based on the file name (without the <code>.js</code> suffix).</li>
+            <li>Modules can be aliased (<code>"jQuery": "/lib/jQuery.2.10.0"</code> etc.)</li>
+            <li>Base paths can be defined (<code>"lib/"</code> actually means <code>"/assets/js/source/lib/"</code> etc.)</li>
+            <li>External script tags with callbacks can be handled.</li>
+            <li>... and many more useful features.</li>
+        </ul>
+
+    </section>
+
+    <!-- now write about how to write modular JavaScript -->
+
+
+    <section class="slide">
+        <h1>Any questions?</h1>
+    </section>
+
+    <!-- deck.navigation snippet -->
+    <div aria-role="navigation">
+        <a href="#" class="deck-prev-link" title="Previous">&#8592;</a>
+        <a href="#" class="deck-next-link" title="Next">&#8594;</a>
+    </div>
+
+    <!-- deck.status snippet -->
+    <p class="deck-status" aria-role="status">
+        <span class="deck-status-current"></span>
+        /
+        <span class="deck-status-total"></span>
+    </p>
+
+    <!-- deck.goto snippet -->
+    <form action="." method="get" class="goto-form">
+        <label for="goto-slide">Go to slide:</label>
+        <input type="text" name="slidenum" id="goto-slide" list="goto-datalist">
+        <datalist id="goto-datalist"></datalist>
+        <input type="submit" value="Go">
+    </form>
+
+    <!-- End extension snippets. -->
+</div>
+
+<!-- Required JS files. -->
+<script src="../deck/jquery.min.js"></script>
+<script src="../deck/core/deck.core.js"></script>
+
+<!-- Extension JS files. Add or remove as needed. -->
+<script src="../deck/extensions/menu/deck.menu.js"></script>
+<script src="../deck/extensions/goto/deck.goto.js"></script>
+<script src="../deck/extensions/status/deck.status.js"></script>
+<script src="../deck/extensions/navigation/deck.navigation.js"></script>
+<script src="../deck/extensions/scale/deck.scale.js"></script>
+
+<!-- Initialize the deck. You can put this in an external file if desired. -->
+<script>
+$(function() {
+    $.deck('.slide');
+});
+</script>
+</body>
+</html>
