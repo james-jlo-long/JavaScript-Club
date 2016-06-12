@@ -255,13 +255,13 @@ Promise.reject = function (reason) {
     Promise.resolve(1),
     Promise.resolve(2),
     Promise.resolve(3)
-]).then(function (a, b, c) {
-    console.log(a + b + c);
+]).then(function (values) {
+    console.log(values[0] + values[1] + values[2]);
 });
 // logs 6 because 1 + 2 + 3 = 6
 // logs immediately because all promises are resolved</code></pre>
 
-        <p class="slide"><code>Promise.race</code> is the same as <code>Promise.all</code> except that the returned promise resolves as soon as any of the give promises resolve.</p>
+        <p class="slide"><code>Promise.race</code> is the same as <code>Promise.all</code> except that the returned promise resolves as soon as any of the give promises resolve and <code>then</code> is passed a single value rather than an array of values.</p>
 
     </section>
 
@@ -514,7 +514,7 @@ function define(name, requires, factory) {
         </div>
 
     </section>
-
+<!-- This DOES NOT work - *epic sad face* -->
     <section class="slide">
 
         <p>We can expand that using our <code>getScript</code> to get modules we haven't requested yet.</p>
@@ -547,7 +547,9 @@ function require(names, callback) {
 
     return Promise
         .all(requests.map(getModule))
-        .then(callback);
+        .then(function (values) {
+            callback.apply(undefined, values);
+        });
 
 }</code></pre>
 

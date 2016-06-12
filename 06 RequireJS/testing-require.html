@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Testing Require</title>
+
+<script src="initial-require.js"></script>
+<script>
+console.info("starting");
+require(["require-test.js"], function (test) {
+    console.info("arguments = %o", test);
+    test.run();
+    console.info("loaded!");
+});
+</script>
+
+</head>
+<body>
+
+</body>
+</html>
