@@ -117,7 +117,7 @@
             promises[name] = new Promise(function (resolve) {
 
                 Promise
-                    .all(depends.map(resolvedependency))
+                    .all(depends.map(resolveDependency))
                     .then(resolve);
 
             });
@@ -135,7 +135,7 @@
      *  which includes loading the script (see [[getScript]]) and adding the
      *  module (see [[addModule]]).
      **/
-    function resolvedependency(name) {
+    function resolveDependency(name) {
 
         if (!dependencies[name]) {
 
@@ -208,7 +208,7 @@
             depends = [depends];
         }
 
-        Promise.all(depends.map(resolvedependency)).then(function (mods) {
+        Promise.all(depends.map(resolveDependency)).then(function (mods) {
             callback.apply(undefined, mods);
         });
 

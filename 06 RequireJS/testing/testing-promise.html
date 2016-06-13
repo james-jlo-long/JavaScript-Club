@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <title>Testing Promise</title>
 
-<script src="Promise.js"></script>
+<script src="../Promise.js"></script>
 
 <script>
 function resolveAfter(time) {
 
-    return new Prom(function (resolve) {
+    return new Promise(function (resolve) {
 
         window.setTimeout(function () {
             console.log("resolved after %d ms", time);
@@ -23,7 +23,7 @@ function resolveAfter(time) {
 
 function rejectAfter(time) {
 
-    return new Prom(function (ignore, reject) {
+    return new Promise(function (ignore, reject) {
 
         window.setTimeout(function () {
             console.log("rejected after %d ms", time);

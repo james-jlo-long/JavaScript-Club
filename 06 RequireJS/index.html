@@ -334,6 +334,35 @@ Promise.reject = function (reason) {
 
     <section class="slide">
 
+        <p>Although it's safer to find the first <code>&lt;script&gt;</code> tag on the page and insert your new <code>&lt;script&gt;</code> before that. There will always be at least one <code>&lt;script&gt;</code> tag on the page because the one that's executing right now exists.</p>
+
+        <pre><code>var firstScript;
+
+function getFirstScript() {
+
+    if (!firstScript) {
+        firstScript = document.querySelector("script");
+    }
+
+    return firstScript;
+
+}
+
+function includeScript(url, success, error) {
+
+    var firstScript = getFirstScript();
+
+    // ...
+
+    firstScript.parentNode
+        .insertBefore(script, firstScript);
+
+}</code></pre>
+
+    </section>
+
+    <section class="slide">
+
         <p>The problem is that calling that again will attempt to load the script a second time (and probably succeed, but the script might not be expecting that).</p>
 
         <div class="slide">
@@ -401,7 +430,10 @@ getScript("/lib/jQuery.js").then(function () {
     $; // &lt;-- jQuery
 });
 
-getScript(["/lib/jQuery.js", "/lib/underscore.js"]).then(function () {
+getScript([
+    "/lib/jQuery.js",
+    "/lib/underscore.js"
+]).then(function () {
     $; // &lt;-- jQuery (from cache)
     _; // &lt;-- Underscore
 });</code></pre>
@@ -488,7 +520,7 @@ function define(name, requires, factory) {
 
             <div class="slide">
 
-                <p>... or we can declare it as a dependancy of another module.</p>
+                <p>... or we can declare it as a dependency of another module.</p>
 
                 <pre><code>define("details", "names", function (names) {
 
@@ -514,41 +546,44 @@ function define(name, requires, factory) {
         </div>
 
     </section>
-<!-- This DOES NOT work - *epic sad face* -->
+
     <section class="slide">
 
-        <p>We can expand that using our <code>getScript</code> to get modules we haven't requested yet.</p>
+        <p>We can expand that using our <code>getScript</code> to request modules that haven't loaded yet.</p>
 
-        <pre><code>var gotten = {};
+        <p>First, we need to adjust <code>define</code> so it registers a module and sets about getting the module's dependencies. <code>require</code> needs to load dependencies as well, but doesn't need to set anything (just like before).</p>
 
-function getModule(name) {
+        <pre><code>function define(name, depends, callback) {
 
-    if (!gotten[url]) {
+    if (typeof depends === "function") {
 
-        gotten[url] = new Promise(function (resolve) {
-
-            getScript(url).then(function () {
-                resolve(defined[url]);
-            });
-
-        });
+        callback = depends;
+        depends = [];
 
     }
 
-    return gotten[url];
+    modules[name] = {
+        name: name,
+        depends: depends,
+        callback: callback
+    };
+
+    addModule(name, depends).then(function (mods) {
+        callback.apply(undefined, mods);
+    });
 
 }
 
-function require(names, callback) {
+function require(depends, callback) {
 
-    var requests = Array.isArray(names)
-        ? names
-        : [names];
+    if (!Array.isArray(depends)) {
+        depends = [depends];
+    }
 
-    return Promise
-        .all(requests.map(getModule))
-        .then(function (values) {
-            callback.apply(undefined, values);
+    Promise
+        .all(depends.map(resolveDependency))
+        .then(function (mods) {
+            callback.apply(undefined, mods);
         });
 
 }</code></pre>
@@ -557,26 +592,110 @@ function require(names, callback) {
 
     <section class="slide">
 
-            <p>Does this look familiar yet?</p>
+        <p>The <code>addModule</code> function needs to create a <code>Promise</code> (if one doesn't exist already) that resolves when all dependencies have been loaded.</p>
 
-            <pre><code>// http://www.example.com/lib/util.js
+        <pre><code>var promises = {};
+
+function addModule(name, depends) {
+
+    depends = depends || [];
+
+    if (!promises[name]) {
+
+        promises[name] = new Promise(function (resolve) {
+
+            Promise
+                .all(depends.map(resolveDependency))
+                .then(resolve);
+
+        });
+    }
+
+    return promises[name];
+
+}</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <p>To resolve a dependency, we need to load the script (which will <code>define</code> a module) then add that defined module, which will get all the dependencies, which will <code>define</code> them all as modules ... and we ride the <code>resolve</code> back up the layers.</p>
+
+        <pre><code>var dependencies = {};
+
+function resolveDependency(name) {
+
+    if (!dependencies[name]) {
+
+        dependencies[name] = new Promise(function (resolve) {
+
+            getScript(name).then(function () {
+
+                var mod = modules[name];
+
+                addModule(name, mod.depends).then(function (module) {
+                    resolve(mod.callback.apply(undefined, module));
+                });
+
+            });
+
+        });
+
+    }
+
+    return dependencies[name];
+
+}</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <p>Put that all together and you get a script that will asynchronously load all the dependencies of a module and execute a callback when it's finished, passing the modules to that callback.</p>
+
+        <pre><code>// require-test.js
 define(
-    "/lib/util.js",
-    ["/lib/util/Array.js", "/lib/util/String.js"],
-    function (array, string) {
+    "require-test.js",
+    ["require-util.js"],
+    function (util) {
 
         return {
-            Array: array,
-            String: string
+
+            run: function () {
+
+                util.forEach([1, 2, 3], function (n) {
+                    console.log(n);
+                });
+
+            }
+
         };
 
     }
 );</code></pre>
 
-            <pre><code>require("/lib/util.js", function (util) {
-    util.Array;
-    util.String;
-});</code></pre>
+        <pre><code>// require-util.js
+define(
+    "require-util.js",
+    function () {
+
+        return {
+
+            forEach: Array.forEach || function (array, handler, context) {
+                return Array.prototype.forEach.call(array, handler, context);
+            }
+
+        };
+
+    }
+);</code></pre>
+
+        <pre><code>&lt;!-- main-page.html --&gt;
+&lt;script&gt;
+require(["require-test.js"], function (test) {
+    test.run();
+});
+&lt;/script&gt;</code></pre>
 
         <p class="slide">That is the essence of <strong>RequireJS</strong>.</p>
 
@@ -587,13 +706,13 @@ define(
         <h2>RequireJS does a lot more</h2>
 
         <ul>
-            <li>Modules aren't fully defined until they're used, allowing them to be extended.</li>
-            <li>Modules can be defined without having to be tied to a script tag (although I'd recommend that they always are).</li>
-            <li>Modules that fail to load are handled.</li>
             <li>Module names are automatically defined based on the file name (without the <code>.js</code> suffix).</li>
             <li>Modules can be aliased (<code>"jQuery": "/lib/jQuery.2.10.0"</code> etc.)</li>
             <li>Base paths can be defined (<code>"lib/"</code> actually means <code>"/assets/js/source/lib/"</code> etc.)</li>
+            <li>Modules that fail to load are handled.</li>
             <li>External script tags with callbacks can be handled.</li>
+            <li>Module execution can be delayed until <code>DOMContentLoaded</code>.</li>
+            <li>Localisation modules can be included.</li>
             <li>... and many more useful features.</li>
         </ul>
 
@@ -601,6 +720,11 @@ define(
 
     <!-- now write about how to write modular JavaScript -->
 
+    <section class="slide">
+
+        <p>So ... now you know what <strong>RequireJS</strong> is, the obvious question is: <strong>how should you use it?</strong>.</p>
+        
+    </section>
 
     <section class="slide">
         <h1>Any questions?</h1>
