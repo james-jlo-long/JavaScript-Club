@@ -1,4 +1,4 @@
-define("require-test.js", ["require-util.js"], function (util) {
+define("require-test.js", ["require-util.js"], function requireTest(util) {
 
     return {
 

@@ -1,4 +1,4 @@
-define("require-util.js", function () {
+define("require-util.js", function requireUtil() {
 
     return {
 

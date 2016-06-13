@@ -48,6 +48,94 @@ function getScript(url) {
 
 }
 
+
+var promises = {};
+var modules = {};
+var dependancies = {};
+
+function addModule(name, depends) {
+console.log("%c addModule(%o, %o)", "background-color:#FCC;", name, depends);
+    depends = depends || [];
+
+    if (!promises[name]) {
+console.log("%c creating promises[%s]", "background-color:#FCC;", name);
+        promises[name] = new Promise(function (resolve) {
+
+            Promise
+                .all(depends.map(resolveDependancy))
+                .then(function (values) {
+console.log("%c resolving from %o with values %o", "background-color:#FCC;", name, values);
+                    resolve(values);
+                });
+
+        });
+    }
+
+    return promises[name];
+
+}
+
+function resolveDependancy(name) {
+console.log("%c resolveDependancy(%o)", "background-color:#CFC;", name);
+    if (!dependancies[name]) {
+
+        dependancies[name] = new Promise(function (resolve) {
+
+            getScript(name).then(function () {
+console.log("%c getScript(%o) loaded; modules[%s] = %o", "background-color:#CFC;", name, name, modules[name]);
+                addModule(name, modules[name].depends).then(function (module) {
+console.log("%c addModule(%o, %o) resolved and given %o; passing %o", "background-color:#CFC;", name, modules[name].depends, module, modules[name].callback);
+                    //resolve(module);
+                    resolve(
+//                         modules[name].callback.apply(undefined, module.map(function (m, i) {
+// console.log("%c mapping module[%d] %o -> m = %o", "background-color:#CFC;", i, module, m);
+//                             return m();
+//                         }))
+                        modules[name].callback.apply(undefined, module)
+                    );
+                });
+
+            });
+
+        });
+
+    }
+
+    return dependancies[name];
+
+}
+
+function define(name, depends, callback) {
+
+    if (typeof depends === "function") {
+
+        callback = depends;
+        depends = [];
+
+    }
+
+    modules[name] = {
+        name: name,
+        depends: depends,
+        callback: callback
+    };
+
+    addModule(name, depends).then(function (mods) {
+        callback.apply(undefined, mods);
+    });
+
+}
+
+function require(depends, callback) {
+
+    Promise.all(depends.map(resolveDependancy)).then(function (mods) {
+        callback.apply(undefined, mods);
+    });
+
+}
+
+
+
 /*function getModule(module) {
     return modules[name];
 }
@@ -75,7 +163,7 @@ function define(name, requires, factory) {
 
 }*/
 
-
+/*
 var Module = function (name) {
 
     if (typeof name === "string") {
@@ -181,7 +269,7 @@ function define(name, depends, callback) {
     });
 
 }
-
+*/
 
 
 /*
