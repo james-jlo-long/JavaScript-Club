@@ -1,506 +1,220 @@
-//var gotten = {};
-var modules = {};
-var scripts = {};
+(function (namespace) {
 
-function includeScript(url, success, error) {
+    "use strict";
 
-    var script = document.createElement("script");
+    // Contains all information about a module that was given to the `define`
+    // function.
+    var modules = {};
 
-    script.src = url;
-    script.type = "text/javascript";
-    script.async = true;
+    // A cache for all scripts passes to the `getScript` function. This allows
+    // the `Promise` to be returned if the script has already been requested.
+    var scripts = {};
 
-    if (typeof success === "function") {
-        //script.onload = success;
-        script.onload = function () { console.log("script %o loaded", url); success(); }
+    // A cache for all `Promise` instances for loading a module including all
+    // dependencies.
+    var promises = {};
+
+    // A cache of all `Promise` instances for loading a dependency.
+    var dependencies = {};
+
+    // The first <script> tag on the page. This is more reliable than simply
+    // appending to the <head> tag.
+    var firstScript;
+
+    /**
+     *  getFirstScript() -> Element
+     *
+     *  Gets the first `<script>` tag on the page.
+     **/
+    function getFirstScript() {
+
+        if (!firstScript) {
+            firstScript = document.getElementsByTagName("script")[0];
+        }
+
+        return firstScript;
+
     }
 
-    if (typeof error === "function") {
-        script.onerror = error;
+    /**
+     *  includeScript(url[, success[, error]])
+     *  - url (String): Url of the script to load.
+     *  - success (Function): Optional function to execute when the script has
+     *    loaded.
+     *  - error (Function): Optional function to execute if the script fails to
+     *    load.
+     *
+     *  Loads a script by appending it to the head.
+     **/
+    function includeScript(url, success, error) {
+
+        var script = document.createElement("script");
+        var first = getFirstScript();
+
+        script.src = url;
+        script.type = "text/javascript";
+        script.async = true;
+
+        if (typeof success === "function") {
+            script.onload = success;
+        }
+
+        if (typeof error === "function") {
+            script.onerror = error;
+        }
+
+        first.parentNode.insertBefore(script, first);
+
     }
 
-    document.head.appendChild(script);
+    /**
+     *  getScript(url) -> Promise
+     *  - url (String): URL of the script to load.
+     *
+     *  Creates a `Promise` that resolves when the script from the given `url`
+     *  has loaded. If the script fails to load, the `Promise` is rejected.
+     **/
+    function getScript(url) {
 
-}
+        var promise;
 
-function getScript(url) {
+        if (Array.isArray(url)) {
+            promise = Promise.all(url.map(getScript));
+        } else {
 
-    var promise;
+            promise = scripts[url];
 
-    if (Array.isArray(url)) {
-        promise = Promise.all(url.map(getScript));
-    } else {
+            if (!promise) {
 
-        promise = scripts[url];
+                promise = new Promise(function (resolve, reject) {
+                    includeScript(url, resolve, reject);
+                });
+                scripts[url] = promise;
 
-        if (!promise) {
-
-            promise = new Promise(function (resolve, reject) {
-                includeScript(url, resolve, reject);
-            });
-            scripts[url] = promise;
+            }
 
         }
 
+        return promise;
+
     }
 
-    return promise;
+    /**
+     *  addModule(name[, depends]) -> Promise
+     *  - name (String): Name of the module to add.
+     *  - depends (Array): Optional array of dependency names to load as well.
+     *
+     *  Creates a `Promise` that resolves when all the associated dependencies
+     *  have loaded. The `Promise` is resolved with the dependencies, all loaded
+     *  with their dependencies, if any.
+     **/
+    function addModule(name, depends) {
 
-}
+        depends = depends || [];
 
+        if (!promises[name]) {
 
-var promises = {};
-var modules = {};
-var dependancies = {};
+            promises[name] = new Promise(function (resolve) {
 
-function addModule(name, depends) {
-console.log("%c addModule(%o, %o)", "background-color:#FCC;", name, depends);
-    depends = depends || [];
+                Promise
+                    .all(depends.map(resolvedependency))
+                    .then(resolve);
 
-    if (!promises[name]) {
-console.log("%c creating promises[%s]", "background-color:#FCC;", name);
-        promises[name] = new Promise(function (resolve) {
+            });
+        }
 
-            Promise
-                .all(depends.map(resolveDependancy))
-                .then(function (values) {
-console.log("%c resolving from %o with values %o", "background-color:#FCC;", name, values);
-                    resolve(values);
-                });
+        return promises[name];
 
-        });
     }
 
-    return promises[name];
+    /**
+     *  resolveDependency(name) -> Promise
+     *  - name (String): Name of the dependency to resolve.
+     *
+     *  Creates a promise that resolves when the given dependency is loaded,
+     *  which includes loading the script (see [[getScript]]) and adding the
+     *  module (see [[addModule]]).
+     **/
+    function resolvedependency(name) {
 
-}
+        if (!dependencies[name]) {
 
-function resolveDependancy(name) {
-console.log("%c resolveDependancy(%o)", "background-color:#CFC;", name);
-    if (!dependancies[name]) {
+            dependencies[name] = new Promise(function (resolve) {
 
-        dependancies[name] = new Promise(function (resolve) {
+                getScript(name).then(function () {
 
-            getScript(name).then(function () {
-console.log("%c getScript(%o) loaded; modules[%s] = %o", "background-color:#CFC;", name, name, modules[name]);
-                addModule(name, modules[name].depends).then(function (module) {
-console.log("%c addModule(%o, %o) resolved and given %o; passing %o", "background-color:#CFC;", name, modules[name].depends, module, modules[name].callback);
-                    //resolve(module);
-                    resolve(
-//                         modules[name].callback.apply(undefined, module.map(function (m, i) {
-// console.log("%c mapping module[%d] %o -> m = %o", "background-color:#CFC;", i, module, m);
-//                             return m();
-//                         }))
-                        modules[name].callback.apply(undefined, module)
-                    );
+                    var mod = modules[name];
+
+                    addModule(name, mod.depends).then(function (module) {
+                        resolve(mod.callback.apply(undefined, module));
+                    });
+
                 });
 
             });
 
+        }
+
+        return dependencies[name];
+
+    }
+
+    /**
+     *  define(name[, depends], callback)
+     *  - name (String): Name of the module to define.
+     *  - depends (Array): Optional dependencies.
+     *  - callback (Function): Callback to execute when the dependencies have
+     *    loaded.
+     *
+     *  The public interface for defining a module. The `callback` will execute
+     *  as soon as all the dependencies have loaded and the `callback` is passed
+     *  those modules.
+     **/
+    function define(name, depends, callback) {
+
+        if (typeof depends === "function") {
+
+            callback = depends;
+            depends = [];
+
+        }
+
+        modules[name] = {
+            name: name,
+            depends: depends,
+            callback: callback
+        };
+
+        addModule(name, depends).then(function (mods) {
+            callback.apply(undefined, mods);
         });
 
     }
 
-    return dependancies[name];
+    /**
+     *  require(depends, callback)
+     *  - depends (String|Array): Dependency/ies to load.
+     *  - callback (Function): Function to execute when the dependencies have
+     *    loaded.
+     *
+     *  Loads the required dependencies then executes the function. The
+     *  dependencies are passed to the callback. This is basically the same as
+     *  [[define]] except that the module does not need to be defined, merely
+     *  accessed.
+     **/
+    function require(depends, callback) {
 
-}
-
-function define(name, depends, callback) {
-
-    if (typeof depends === "function") {
-
-        callback = depends;
-        depends = [];
-
-    }
-
-    modules[name] = {
-        name: name,
-        depends: depends,
-        callback: callback
-    };
-
-    addModule(name, depends).then(function (mods) {
-        callback.apply(undefined, mods);
-    });
-
-}
-
-function require(depends, callback) {
-
-    Promise.all(depends.map(resolveDependancy)).then(function (mods) {
-        callback.apply(undefined, mods);
-    });
-
-}
-
-
-
-/*function getModule(module) {
-    return modules[name];
-}
-
-function require(names, callback) {
-
-    var requests = Array.isArray(names)
-        ? names
-        : [names];
-
-    return callback.apply(undefined, requests.map(getModule));
-
-}
-
-function define(name, requires, factory) {
-
-    if (typeof requires === "function") {
-
-        factory  = requires;
-        requires = [];
-
-    }
-
-    modules[name] = require(requires, factory);
-
-}*/
-
-/*
-var Module = function (name) {
-
-    if (typeof name === "string") {
-        this.setName(name);
-    }
-
-    this.required = [];
-
-};
-
-Module.prototype = {
-
-    setName: function (name) {
-        this.name = name;
-    },
-
-    setDepends: function (depends) {
-
-        if (depends && !Array.isArray(depends)) {
+        if (!Array.isArray(depends)) {
             depends = [depends];
         }
 
-        this.depends = depends;
-
-    },
-
-    loadDepends: function () {
-
-        if (!this.promise) {
-
-            this.promise = new Promise(function (resolve) {
-
-                Promise.all(this.depends.map(Module.load)).then(function () {
-                });
-
-            });
-
-        }
-
-        return this.promise;
-
-    },
-
-    then: function (onFulfilled, onRejected) {
-        this.loadRequired().then(onFulfilled, onRejected);
-    },
-
-    catch: function (onRejected) {
-        this.loadRequired().catch(onRejected);
-    }
-
-};
-
-Module.modules = {};
-
-Module.has = Object.prototype.hasOwnProperty.bind(Module.modules);
-
-Module.get = function (name) {
-    return Modules.module[name];
-};
-
-Module.set = function (name) {
-    Modules.module[name] = new Module(name);
-};
-
-Module.create = function (name) {
-
-    if (!Module.has(name)) {
-        Module.set(name);
-    }
-
-    return Module.get(name);
-
-};
-
-// -> Promise
-Module.load = function (name) {
-
-    return new Promise(function (resolve) {
-
-        getScript(name).then(function () {
-            resolve(Module.create(name));
-        });
-
-    });
-
-};
-
-function define(name, depends, callback) {
-
-    var module = Module.create(name);
-
-    if (typeof depends === "function") {
-
-        callback = depends;
-        depends = [];
-
-    }
-
-    module.setDepends(depends);
-    module.then(function (values) {
-        callback.apply(undefined, values);
-    });
-
-}
-*/
-
-
-/*
-var defined = {};
-function getModule(name) {
-
-console.log("%c getModule(%o)", "background-color:#FCC", name);
-    if (!modules[name]) {
-console.log("%c defining %o module", "background-color:#FCC", name);
-        modules[name] = new Promise(function (resolve) {
-
-            getScript(name).then(function () {
-console.log("%c getScript(%o) has loaded, resolving with %o", "background-color:#FCC", name, defined[name]);
-                resolve(defined[name]);
-            });
-
+        Promise.all(depends.map(resolvedependency)).then(function (mods) {
+            callback.apply(undefined, mods);
         });
 
     }
 
-    return modules[name];
+    namespace.define = define;
+    namespace.require = require;
 
-}
-
-function require(depends, factory) {
-
-    if (!Array.isArray(depends)) {
-        depends = [depends];
-    }
-
-    return Promise.all(depends.map(getModule)).then(function (mods) {
-console.log("%c require %o => %o", "background-color:#CFC", depends, mods);
-        factory.apply(undefined, mods);
-    });
-
-}
-
-function define(name, depends, factory) {
-
-    if (typeof depends === "function") {
-
-        factory = depends;
-        depends = [];
-
-    }
-console.log("%c define(%o) has created depends %o => %o", "background-color:#CCF", name, depends, depends.map(getModule));
-    Promise.all(depends.map(getModule)).then(function (mods) {
-console.log("%c defining %o with mods %o ...", "background-color:#CCF", name, mods);
-        defined[name] = factory.apply(undefined, mods);
-console.log("%c ... an creating %o", "background-color:#CCF", defined[name]);
-    });
-
-}
-*/
-
-
-/*
-Am I just getting the Promise for the script itself, not the dependancies?
- */
-/*
-function getModule(name) {
-    return modules[name];
-}
-
-function applyFactory(factory, depends) {
-console.log("applyFactory from %s %o => %o", arguments[2], depends, depends.map(getModule));
-    return factory.apply(undefined, depends.map(getModule));
-}
-
-function require(depends, factory) {
-
-    if (!Array.isArray(depends)) {
-        depends = [depends];
-    }
-console.log("require has depends %o =>", depends, depends.map(getScript));
-    Promise.all(depends.map(getScript)).then(function () {
-        applyFactory(factory, depends, "require");
-    });
-
-}
-
-function define(name, depends, factory) {
-
-    if (typeof depends === "function") {
-
-        factory = depends;
-        depends = [];
-
-    }
-console.log("define %o has depends %o =>", name, depends, depends.map(getScript));
-    Promise.all(depends.map(getScript)).then(function () {
-        modules[name] = applyFactory(factory, depends, "define");
-    });
-
-}
-*/
-
-
-
-/*function require(depends, factory) {
-
-    var deps = Array.isArray(depends)
-        ? depends
-        : [depends]
-    var mods = deps.concat();
-
-    if (mods.length) {
-        mods = mods.map(getScript);
-    } else {
-        mods.push(Promise.resolve());
-    }
-
-    Promise.all(mods).then(function () {
-//console.log("(deps %o) mods %o => values %o", deps, mods, values);
-        factory.apply(undefined, deps.map(d => modules[d]);
-    });
-
-}
-
-function define(name, depends, factory) {
-
-    if (typeof depends === "factory") {
-
-        factory = depends;
-        depends = [];
-
-    }
-
-    // Not defining anything just yet ...
-    require(depends, factory);
-
-    // if (!modules[name]) {
-    //
-    //
-    //
-    // }
-
-    // modules[name].then(function () {
-    //     factory.apply(undefined, depends.map
-    // });
-
-}*/
-
-
-/*function require(depends, factory) {
-
-    var deps = Array.isArray(depends)
-        ? depends
-        : [depends];
-    var prom = depends.length
-        ? getScript(depends)
-        : Promise.resolve();
-console.log("depends = %o \nprom = %o", depends, prom);
-    prom.then(function () {
-console.log("prom.then modules are %o, %o => %o", modules, depends, depends.map(d => modules[d]));
-        factory.apply(undefined, depends.map(function (name) {
-            return modules[name];
-        }));
-
-    }
-//, function () { console.error("require(%o) died: %o", depends, arguments); }
-    );
-
-}
-
-function define(name, depends, factory) {
-
-    if (typeof depends === "function") {
-
-        factory = depends;
-        depends = [];
-
-    }
-//console.log("define(%o, %o, %o)", name, depends, factory);
-    require(depends, function () {
-//console.log("defining %o using %o", name, arguments);
-        modules[name] = factory.apply(undefined, arguments);
-    });
-
-}*/
-
-
-
-
-
-/*
-
-function getModule(name) {
-
-    if (!gotten[name]) {
-
-        gotten[name] = new Promise(function (resolve) {
-
-            getScript(name).then(function () {
-console.log("getScript(%o).then passing modules[%o] (%o) = %o", name, name, modules, modules[name]);
-// Maybe don't resolve here? populate then resolve?
-                resolve(modules[name]);
-            });
-
-        });
-
-    }
-
-    return gotten[name];
-
-}
-
-function require(names, callback) {
-
-    var requests = Array.isArray(names)
-        ? names
-        : [names];
-
-    return Promise.all(requests.map(getModule)).then(function (values) {
-console.log("require(%o, %o) gives values %o", names, callback, values);
-        callback.apply(undefined, values);
-    });
-
-}
-
-function define(name, requires, factory) {
-
-    if (typeof requires === "function") {
-
-        factory  = requires;
-        requires = [];
-
-    }
-
-// becuase require() is returning a promise, modules[name] is a promise when it should be the module!
-    modules[name] = require(requires, factory);
-
-}
-*/
+}(window));
