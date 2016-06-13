@@ -334,7 +334,7 @@ Promise.reject = function (reason) {
 
     <section class="slide">
 
-        <p>Although it's safer to find the first <code>&lt;script&gt;</code> tag on the page and insert your new <code>&lt;script&gt;</code> before that. There will always be at least one <code>&lt;script&gt;</code> tag on the page because the one that's executing right now exists.</p>
+        <p>Instead of always adding your new <code>&lt;script&gt;</code> to the <code>&lt;head&gt;</code> or <code>&lt;body&gt;</code> tag, it's safer to find the first <code>&lt;script&gt;</code> tag on the page and insert your new <code>&lt;script&gt;</code> before that. There will always be at least one <code>&lt;script&gt;</code> tag on the page because the one that's executing right now exists.</p>
 
         <pre><code>var firstScript;
 
@@ -522,7 +522,7 @@ function define(name, requires, factory) {
 
                 <p>... or we can declare it as a dependency of another module.</p>
 
-                <pre><code>define("details", "names", function (names) {
+                <pre><code>define("details", ["names"], function (names) {
 
     return Object.assign({}, names, {
         age: 31
@@ -716,6 +716,8 @@ require(["require-test.js"], function (test) {
             <li>... and many more useful features.</li>
         </ul>
 
+        <p class="slide">For the rest of this lesson I'll be using the syntax from the real <strong>RequireJS</strong>.</p>
+
     </section>
 
     <!-- now write about how to write modular JavaScript -->
@@ -723,7 +725,7 @@ require(["require-test.js"], function (test) {
     <section class="slide">
 
         <p>So ... now you know what <strong>RequireJS</strong> is, the obvious question is: <strong>how should you use it?</strong>.</p>
-        
+
     </section>
 
     <section class="slide">
