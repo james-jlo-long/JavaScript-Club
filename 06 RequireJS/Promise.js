@@ -117,17 +117,22 @@ var Promise = window.Promise || (function () {
          *  functions to execute when the promise is resolved or rejected. The
          *  `onFulfilled` function will only execute when the promise is
          *  resolved and `onRejected` is only executed when the promise is
-         *  rejected. The [[Promise]] instance is returned to allow for
-         *  chaining.
+         *  rejected.
+         *
+         *  A new, resolved, [[Promise]] is returned with whatever the returned
+         *  value of either `onFulfilled` or `onRejected` was (or `undefined` if
+         *  nothing was returned).
          **/
         then: function (onFulfilled, onRejected) {
+
+            var value;
 
             switch (this.state) {
 
             case "fulfilled":
 
                 if (typeof onFulfilled === "function") {
-                    onFulfilled(this.data);
+                    value = Prom.resolve(onFulfilled(this.data));
                 }
 
                 break;
@@ -135,19 +140,30 @@ var Promise = window.Promise || (function () {
             case "rejected":
 
                 if (typeof onRejected === "function") {
-                    onRejected(this.data);
+                    value = Promise.resolve(onRejected(this.data));
                 }
 
                 break;
 
             default:
 
-                this.callbacks.push([
-                    onFulfilled,
-                    onRejected
-                ]);
+                // this.callbacks.push([
+                //     onFulfilled,
+                //     onRejected
+                // ]);
+
+                value = new Prom(function (resolve, reject) {
+                    // XXX - something here ...
+                });
 
             }
+
+// XXX - return Promise.resolve(value) but don't pass back a promise until this
+// one is resolved.
+// new Promise(function (resolve) { window.setTimeout(function () { resolve(1); }, 3000); })
+// .then(function (n) { console.log("a: %d", n); return n + 1; })
+// .then(function (n) { console.log("b: %d", n); return n + 1; });
+// ^-- logs "a: 1" then "b: 2" in order and after 3 seconds
 
             return this;
 
