@@ -79,8 +79,6 @@
                 <p>The idea is that your application needs to access information or perform an action asynchronously. You don't know when that action will complete but you <em>do</em> know what you need to do when it completes.</p>
                 <p>A <code>Promise</code> will allow you to define functions to execute when it's <strong>resolved</strong> or <strong>rejected</strong>, storing the functions if it needs to and executing the functions as soon as it can - even if it's given functions after it's completed.</p>
 
-                <p class="slide"><code>Promise</code>s are really abstract and difficult to understand without an example. I'll show you a version to explain roughly what they do - this <strong>is not</strong> a complete polyfill (there are much better ones online) but should help you understand them.</p>
-
             </div>
 
         </div>
@@ -89,47 +87,38 @@
 
     <section class="slide">
 
-        <p>What a promise looks like:</p>
+        <p><code>Promise</code>s are tricky to understand without an example because they're a little abstract. First I'll explain the abstract so you can understand the examples later.</p>
+        <p>When you create a <code>Promise</code>, you pass it a function to <code>resolve</code> or <code>reject</code> it and possibly pass that function an argument which will be passed to the <code>Promise</code>'s callbacks. Once the <code>Promise</code> is in this state, the state is set and cannot be changed.</p>
 
-        <pre><code>var Promise = function (handler) {
-
-    this.callbacks = [];
-
-    try {
-
-        handler(
-            this.complete.bind(this, "fulfilled"),
-            this.complete.bind(this, "rejected")
-        );
-
-    } catch (ex) {
-        this.complete("rejected", "Error: " + ex.message);
-    }
-
-};
-
-Promise.prototype.complete = function (state, data) {
-
-    if (!this.state) {
-
-        this.state = state;
-        this.data = data;
-
-        this.callbacks.forEach(function (pair) {
-            this.then(pair[0], pair[1]);
-        }, this);
-
-    }
-
-};</code></pre>
-
-        <p>How you'd use it:</p>
-
-        <pre><code>var promise = new Promise(function (resolve, reject) {
+        <pre class="slide"><code>// Resolves after one second.
+var p1 = new Promise(function (resolve, reject) {
 
     window.setTimeout(function () {
-        resolve("information");
+        resolve(5);
     }, 1000);
+
+});</code></pre>
+
+        <pre class="slide"><code>// Rejects after two seconds.
+var p2 = new Promise(function (resolve, reject) {
+
+    window.setTimeout(function () {
+        reject(5);
+    }, 2000);
+
+});</code></pre>
+
+        <pre class="slide"><code>// Resolves after one second.
+// Reject is ignored.
+var p3 = new Promise(function (resolve, reject) {
+
+    window.setTimeout(function () {
+        resolve(5);
+    }, 1000);
+
+    window.setTimeout(function () {
+        reject(5);
+    }, 2000);
 
 });</code></pre>
 
@@ -137,53 +126,89 @@ Promise.prototype.complete = function (state, data) {
 
     <section class="slide">
 
-        <pre><code>Promise.prototype.then = function (onFulfilled, onRejected) {
+        <p>You can add callbacks to the promise using either <code>then</code> or <code>catch</code>. <code>then</code> can listen to a <code>resolve</code> or <code>reject</code>, <code>catch</code> will only listen to <code>reject</code> or any thrown errors.</p>
 
-    switch (this.state) {
+        <pre><code>var p1 = new Promise(function (resolve, reject) {
+    resolve(1);
+});
 
-    case "fulfilled":
+p1.then(function (data) {
+    console.log(data);
+}, function (data) {
+    console.warn(data);
+});
+// logs 1
+// the warn never happens because the Promise is resolved.
 
-        if (typeof onFulfilled === "function") {
-            onFulfilled(this.data);
-        }
-
-        break;
-
-    case "rejected":
-
-        if (typeof onRejected === "function") {
-            onRejected(this.data);
-        }
-
-        break;
-
-    default:
-
-        this.callbacks.push([
-            onFulfilled,
-            onRejected
-        ]);
-
-    }
-
-    return this;
-
-};
-
-Promise.prototype.catch = function (onRejected) {
-    return this.then(undefined, onRejected);
-};</code></pre>
-
-        <pre><code>promise.then(function (data) {
+p1.then(function (data) {
     console.log(data);
 });
-// logs "information" after 1 second</code></pre>
+// also logs 1
+
+p1.catch(function (data) {
+    console.warn(data);
+});
+// does nothing because the Promise is resolved.</code></pre>
 
     </section>
 
     <section class="slide">
 
-        <p>Promises have four utility methods:</p>
+        <p>A common misconception is that <code>then</code> and <code>catch</code> return the <code>Promise</code>. They actually return a new <code>Promise</code> that is always resolved (never rejected) with whatever those methods returned.</p>
+
+        <pre><code>var myPromise = new Promise(function (resolve, reject) {
+    p1.resolve(1);
+});
+
+myPromise
+    .then(function (data) {
+        console.log(data); // logs 1
+        return data + 1;
+    })
+    .then(function (data) {
+        console.log(data); // logs 2
+    })
+    .then(function (data) {
+        console.log(data); // logs undefined
+    });</code></pre>
+
+        <div class="slide">
+
+            <p>The original data from the promise is probably unchanged.</p>
+
+            <pre><code>myPromise.then(function (data) {
+    console.log(data); // logs 1
+});</code></pre>
+
+        </div>
+
+        <div class="slide">
+
+            <p>Like I said, the returned <code>Promise</code> is always resolved unless the function throws an error.</p>
+
+            <pre><code>myPromise
+    .then(function (data) {
+        throw new Error("Nyah!");
+    })
+    .catch(function (data) {
+        console.log(data); // logs Error: Nyah!
+    })
+    .then(function (data) {
+        console.log(data); // logs undefined
+    }, function (data) {
+        console.log(data); // does nothing, promise resolved.
+    });</code></pre>
+
+        </div>
+
+        <p class="slide">Don't worry: for the examples I have in mind, we won't be chaining.</p>
+
+    </section>
+
+    <section class="slide">
+
+        <p>The <code>Promise</code> function has 4 static properties that are very useful.</p>
+
         <ul>
             <li><code>Promise.resolve</code></li>
             <li><code>Promise.reject</code></li>
@@ -191,77 +216,80 @@ Promise.prototype.catch = function (onRejected) {
             <li><code>Promise.race</code></li>
         </ul>
 
-        <pre class="slide"><code>Promise.resolve = function (data) {
+        <div class="slide">
 
-    return new Promise(function (resolve) {
-        resolve(data);
-    });
+            <p><code>Promise.resolve</code> and <code>Promise.reject</code> just create a new <code>Promise</code> that is already resolved or rejected with the data that was passed.</p>
 
-};
+            <pre><code>Promise.resolve(1).then(function (data) {
+    console.log(data); // logs 1
+});</code></pre>
 
-Promise.reject = function (reason) {
-
-    return new Promise(function (ignore, reject) {
-        reject(reason);
-    });
-
-};</code></pre>
+        </div>
 
     </section>
 
     <section class="slide">
 
-        <pre><code>Promise.all = function (promises) {
-
-    return new Promise(function (resolve, reject) {
-
-        var count = promises.length;
-        var completed = 0;
-        var hasExecuted = false;
-        var resolvedData = [];
-
-        promises.forEach(function (promise, i) {
-
-            promise.then(function (data) {
-
-                completed += 1;
-                resolvedData[i] = data;
-
-                if (!hasExecuted && completed === count) {
-
-                    hasExecuted = true;
-                    resolve(resolvedData);
-
-                }
-
-            }, function (reason) {
-
-                if (!hasExecuted) {
-
-                    hasExecuted = true;
-                    reject(reason);
-
-                }
-
-            });
-
-        });
-
-    });
-
-};</code></pre>
+        <p><code>Promise.all</code> returns a new <code>Promise</code> that resolves when all the given promises are resolved. The <code>then</code> is passed an array of values from the promises.</p>
 
         <pre><code>Promise.all([
     Promise.resolve(1),
     Promise.resolve(2),
-    Promise.resolve(3)
+    new Promise(function (resolve) {
+        window.setTimeout(function () {
+            resolve(3);
+        }, 500);
+    })
 ]).then(function (values) {
     console.log(values[0] + values[1] + values[2]);
 });
-// logs 6 because 1 + 2 + 3 = 6
-// logs immediately because all promises are resolved</code></pre>
+// logs 6 (1 + 2 + 3 = 6) after half a second.</code></pre>
 
-        <p class="slide"><code>Promise.race</code> is the same as <code>Promise.all</code> except that the returned promise resolves as soon as any of the give promises resolve and <code>then</code> is passed a single value rather than an array of values.</p>
+        <div class="slide">
+
+            <p>If one of the <code>Promise</code>s rejects, the returned promise rejects with the reason given (or error message thrown).</p>
+
+            <pre><code>Promise.all([
+    Promise.resolve(1),
+    Promise.resolve(2),
+    Promise.reject(3)
+]).then(function (values) {
+    console.log(values[0] + values[1] + values[2]);
+}, function (reason) {
+    console.warn(reasons);
+});
+// warns 3</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p><code>Promise.race</code> is very similar to <code>Promise.all</code> except that it resolves as soon as the first <code>Promise</code> resolves and only passes that value.</p>
+
+        <pre><code>function resolveAfter(time) {
+
+    return new Promise(function (resolve) {
+
+        window.setTimeout(function () {
+            resolve(time);
+        }, time);
+
+    });
+
+}
+
+Promise.race([
+    resolveAfter(1500),
+    resolveAfter(1000),
+    resolveAfter(500)
+]).then(function (winner) {
+    console.log(winner);
+});
+// logs 500</code></pre>
+
+        <p class="slide">Again, if one of those <code>Promise</code>s reject, the returns <code>Promise</code> is rejected.</p>
 
     </section>
 
@@ -653,6 +681,22 @@ function resolveDependency(name) {
 
         <p>Put that all together and you get a script that will asynchronously load all the dependencies of a module and execute a callback when it's finished, passing the modules to that callback.</p>
 
+        <pre><code>// require-util.js
+define(
+    "require-util.js",
+    function () {
+
+        return {
+
+            forEach: Array.forEach || function (array, handler, context) {
+                return Array.prototype.forEach.call(array, handler, context);
+            }
+
+        };
+
+    }
+);</code></pre>
+
         <pre><code>// require-test.js
 define(
     "require-test.js",
@@ -667,22 +711,6 @@ define(
                     console.log(n);
                 });
 
-            }
-
-        };
-
-    }
-);</code></pre>
-
-        <pre><code>// require-util.js
-define(
-    "require-util.js",
-    function () {
-
-        return {
-
-            forEach: Array.forEach || function (array, handler, context) {
-                return Array.prototype.forEach.call(array, handler, context);
             }
 
         };
@@ -725,6 +753,143 @@ require(["require-test.js"], function (test) {
     <section class="slide">
 
         <p>So ... now you know what <strong>RequireJS</strong> is, the obvious question is: <strong>how should you use it?</strong>.</p>
+
+        <div class="slide">
+
+            <p>You should use it to create modules. A module should be:</p>
+
+            <ul>
+                <li><strong>interchangable</strong> - you should be able to swap one out for another one that does the same thing without having to rewrite the rest of your code.</li>
+                <li>
+                    <p><strong>self contained</strong> - removing a module shouldn't cause another one to break, unless the one you removed was a dependency.</p>
+                    <p>A good way of thinking about this is that your module is either low-level or high-level.</p>
+                    <ul>
+                        <li><strong>Low level</strong> modules have no dependencies (other than their own, perhaps). Examples: library, utility functions.</li>
+                        <li><strong>High level</strong> modules depend on low level ones to work. Higher level just tie other modules together.</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <p class="slide"><strong>A module should do one thing.</strong> When you describe it, if you have to use the word "and", you have two modules (at least).</p>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p>A good place to start when you're trying to write modular code is the folder structure.</p>
+
+        <pre>website/
+    lib/
+        dom/
+            attributes.js
+            classes.js
+            core.js
+            ...
+        util/
+            Array.js
+            core.js
+            Object.js
+            ...
+        dom.js
+        util.js
+    modules/
+        MiniBasket/
+            ...
+        Search/
+            ...
+        MiniBasket.js
+        Search.js
+    pages/
+        homepage.js
+        checkout.js
+        ...</pre>
+
+    </section>
+
+    <section class="slide">
+
+        <pre><code>// modules/Search.js
+define([
+    "modules/Search/config",
+    "modules/Search/Async"
+], function (
+    config,
+    Async
+) {
+
+    "use strict";
+
+    var Search = function () {
+
+        this.async = new Async();
+        this.render = this.renderResults.bind(this);
+
+        this.findElements();
+        this.addHandlers();
+
+    };
+
+    Search.prototype = {
+
+        lookupText: function (value) {
+
+            this.async
+                .get(value, config.urls.search)
+                .then(this.render);
+
+        },
+
+        renderResults: function (results) {
+
+            var markup = results
+                .map(this.drawResult, this)
+                .join("");
+
+            this.list.innerHtml = markup;
+
+        },
+
+        // ...
+
+    };
+
+    return Search;
+
+});</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <pre><code>// pages/homepage.js
+define([
+    "modules/Search",
+    "modules/MiniBasket"
+], function (
+    Search,
+    MiniBasket
+) {
+
+    return {
+
+        start: function () {
+
+            this.search = new Search();
+            this.basket = new MiniBasket();
+
+        },
+
+        // ...
+
+    };
+
+});</code></pre>
+
+        <pre><code>require(["pages/homepage"], function (page) {
+    page.start();
+});</code></pre>
 
     </section>
 
