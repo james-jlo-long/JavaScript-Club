@@ -16,7 +16,7 @@ define(function () {
 
         });
 
-        return object;
+        return source;
 
     };
 
