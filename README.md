@@ -9,6 +9,7 @@ A series of lessons to improve existing JavaScript knowledge.
 - 03: [Context](https://james-jlo-long.github.io/JavaScript-Club/03%20Context/)
 - 04: [Inheritance](https://james-jlo-long.github.io/JavaScript-Club/04%20Inheritance/)
 - 05: [Events](https://james-jlo-long.github.io/JavaScript-Club/05%20Events/)
+- 06: [RequireJS](https://james-jlo-long.github.io/JavaScript-Club/06%20RequireJS/)
 
 ## Software Used
 

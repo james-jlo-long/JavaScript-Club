@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<title>Timer</title>
+
+<script>
+var util = { String: {} };
+function pad(string, length, padding, direction) {
+
+    var str = String(string);
+    var len = Math.max(str.length, Math.round(length) || 0);
+    var left = "";
+    var right = "";
+    var pad = padding
+        ? String(padding)
+        : " ";
+    var amount = 0;
+    var padded = str;
+
+    if (str.length < len) {
+
+        if (direction === "left") {
+
+            left = pad.repeat(length).slice(0, len - str.length);
+            padded = left + str;
+
+        } else if (direction === "both") {
+
+            amount = Math.ceil((len - str.length) / 2);
+            left = pad.repeat(length).slice(0, amount);
+            right = pad.repeat(length).slice(0, str.length + amount);
+            padded = left + str + right;
+
+        } else {
+
+            right = pad.repeat(length).slice(0, len - str.length);
+            padded = str + right;
+
+        }
+
+    }
+
+    return padded;
+
+}
+util.String.pad = pad;
+util.Number = {
+
+    toNearest: function (number, nearest, method) {
+
+        if (!method || !Math[method]) {
+            method = "round";
+        }
+
+        return Math[method](number / nearest) * nearest;
+
+    }
+
+};
+util.Array = {
+
+    from: Array.from || function (array, map, context) {
+
+        if (!map) {
+
+            map = function (x) {
+                return x;
+            };
+
+        }
+
+        return Array.prototype.map.call(array, map, context);
+
+    }
+
+};
+
+var website = {
+
+    util: util,
+
+    dom: {
+
+        get: function (selector, context) {
+            return util.Array.from((context || document).querySelectorAll(selector));
+        },
+
+        byQuery: function (selector, context) {
+            return (context || document).querySelector(selector);
+        },
+
+        on: function (element, event, handler, context) {
+            element.addEventListener(event, handler.bind(context || element));
+        },
+
+        onByQuery: function (selector, event, handler, context) {
+
+            website.dom.get(selector).forEach(function (element) {
+                website.dom.on(element, event, handler, context);
+            });
+
+        }
+
+    },
+
+    events: {
+
+        dummy: document.createElement("div"),
+
+        trigger: function (name, detail) {
+
+            website.events.dummy.dispatchEvent(new CustomEvent(name, {
+                bubbles: true,
+                cancelable: true,
+                detail: detail
+            }));
+
+        },
+
+        listen: function (name, handler, context) {
+            website.events.dummy.addEventListener(name, handler.bind(context), false);
+        },
+
+        stopListening: function (name, handler, context) {
+            website.events.dummy.removeEventListener(name, handler.bind(context), false);
+        }
+
+    }
+
+};
+
+
+
+var Render = function (base) {
+
+    this.hours = base.querySelector(".js-timer-hours");
+    this.minutes = base.querySelector(".js-timer-minutes");
+    this.seconds = base.querySelector(".js-timer-seconds");
+
+};
+
+Render.prototype = {
+
+    display: function (times) {
+
+        Object.keys(times).forEach(function (time) {
+
+            if (this[time]) {
+                this[time].textContent = times[time];
+            }
+
+        }, this);
+
+    }
+
+};
+
+var Interval = function (context) {
+};
+
+Interval.prototype = {
+
+
+    start: function () {
+
+        var that = this;
+
+        that.id = window.requestAnimationFrame(function (timestamp) {
+
+            website.events.trigger(Interval.EVENT_TICK, timestamp);
+            that.start();
+
+        });
+
+    },
+
+    stop: function () {
+
+        window.cancelAnimationFrame(this.id);
+        delete this.id;
+
+    }
+
+};
+
+Interval.EVENT_TICK = "timer-interval-tick";
+
+var Counter = function (interval) {
+
+    this.isCounting = false;
+
+    this.reset();
+    //this.setInterval(interval);
+
+};
+
+Counter.prototype = {
+
+    trigger: function (name, detail) {
+        website.events.trigger(name, detail);
+    },
+
+    /*setInterval: function (interval) {
+        this.interval = interval;
+    },*/
+
+    start: function (startTime) {
+
+        if (!this.isCounting) {
+
+            this.trigger(Counter.EVENT_START, this.startTime);
+            //this.interval.repeat(this.tick);
+
+            this.isCounting = true;
+
+        }
+
+    },
+
+    tick: function (timestamp) {
+
+        if (!this.startTime) {
+            this.startTime = timestamp;
+        }
+
+        this.trigger(Counter.EVENT_UPDATE, timestamp - this.startTime);
+
+    },
+
+    pause: function () {
+
+        if (this.isCounting) {
+
+            this.trigger(Counter.EVENT_PAUSE, this.startTime);
+            //this.interval.stop();
+
+            this.isCounting = false;
+
+        }
+
+    },
+
+    reset: function (startTime) {
+
+        this.startTime = +startTime || 0;
+        this.trigger(Counter.EVENT_RESET, this.startTime);
+
+    },
+
+    stop: function () {
+
+        this.pause();
+        this.reset();
+
+    }
+
+};
+
+Counter.EVENT_START = "timer-start";
+Counter.EVENT_PAUSE = "timer-pause";
+Counter.EVENT_RESET = "timer-reset";
+Counter.EVENT_UPDATE = "timer-update";
+
+var config = {
+
+    selectors: {
+
+        base: ".js-timer",
+        start: ".js-timer-start",
+        pause: ".js-timer-pause",
+        reset: ".js-timer-reset",
+        stop: ".js-timer-stop"
+
+    }
+
+};
+
+var Timer = function () {
+
+    this.setObjects();
+    this.addHandlers();
+
+};
+
+Timer.prototype = {
+
+    setObjects: function () {
+
+        this.render = new Render(website.dom.byQuery(config.selectors.base))
+        this.interval = new Interval();
+        this.counter = new Counter();
+        //this.interval.setContext(this.counter);
+
+    },
+
+    addHandlers: function () {
+
+        var dom = website.dom;
+        var selectors = config.selectors;
+        var counter = this.counter;
+
+        dom.onByQuery(selectors.start, "click", counter.start, counter);
+        dom.onByQuery(selectors.pause, "click", counter.pause, counter);
+        dom.onByQuery(selectors.reset, "click", counter.reset, counter);
+        dom.onByQuery(selectors.stop, "click", counter.stop, counter);
+
+        website.events.listen(Counter.EVENT_UPDATE, function (e) {
+            this.update(e.detail);
+        }, this);
+
+        website.events.listen(Counter.EVENT_START, function (e) {
+            this.interval.start();
+        }, this);
+
+        website.events.listen(Counter.EVENT_PAUSE, function (e) {
+            this.interval.stop();
+        }, this);
+
+        website.events.listen(Interval.EVENT_TICK, function (e) {
+            this.counter.tick(e.detail);
+        }, this);
+
+    },
+
+    pad: function (time) {
+        return website.util.String.pad(time, 2, "0", "left");
+    },
+
+    update: function (timestamp) {
+
+        var date = new Date(timestamp);
+
+        this.render.display({
+            hours: date.getUTCHours(),
+            minutes: this.pad(date.getMinutes()),
+            seconds: this.pad(date.getSeconds())
+        });
+
+    }
+
+};
+
+document.addEventListener("DOMContentLoaded", function () {
+    window.timer = new Timer();
+});
+</script>
+
+</head>
+<body>
+
+<div class="js-timer">
+    <span class="js-timer-hours">0</span>:<span class="js-timer-minutes">0</span>:<span class="js-timer-seconds">0</span>
+</div>
+
+<ul>
+    <li><button type="button" class="js-timer-start">Start</button></li>
+    <li><button type="button" class="js-timer-pause">Pause</button></li>
+    <li><button type="button" class="js-timer-reset">Reset</button></li>
+    <li><button type="button" class="js-timer-stop">Stop</button></li>
+</ul>
+
+</body>
+</html>

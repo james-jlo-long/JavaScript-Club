@@ -30,7 +30,7 @@
 <!-- Required Modernizr file -->
 <script src="../deck/modernizr.custom.js"></script>
 
-
+<script data-main="timer/setup.js" src="timer/require.js"></script>
 
 </head>
 <body>
@@ -157,7 +157,7 @@ p1.catch(function (data) {
         <p>A common misconception is that <code>then</code> and <code>catch</code> return the <code>Promise</code>. They actually return a new <code>Promise</code> that is always resolved (never rejected) with whatever those methods returned.</p>
 
         <pre><code>var myPromise = new Promise(function (resolve, reject) {
-    p1.resolve(1);
+    resolve(1);
 });
 
 myPromise
@@ -207,7 +207,7 @@ myPromise
 
     <section class="slide">
 
-        <p>The <code>Promise</code> function has 4 static properties that are very useful.</p>
+        <p>The <code>Promise</code> function has 4 static methods that are very useful.</p>
 
         <ul>
             <li><code>Promise.resolve</code></li>
@@ -768,6 +768,10 @@ require(["require-test.js"], function (test) {
                         <li><strong>High level</strong> modules depend on low level ones to work. Higher level just tie other modules together.</li>
                     </ul>
                 </li>
+                <li>
+                    <p><strong>ignorant</strong> - your module should know as little about other modules as possible (aim for knowing nothing)</p>
+                    <p>Modules definitely shouldn't be able to talk to each other. A <em>much</em> better solution is to have a pub/sub engine behind the scenes and have modules trigger or listen for events.</p>
+                </li>
             </ul>
 
             <p class="slide"><strong>A module should do one thing.</strong> When you describe it, if you have to use the word "and", you have two modules (at least).</p>
@@ -778,84 +782,109 @@ require(["require-test.js"], function (test) {
 
     <section class="slide">
 
-        <p>A good place to start when you're trying to write modular code is the folder structure.</p>
+        <p>Since it's tricky to understand some of this stuff without an example, I've put together a simple timer.</p>
 
-        <pre>website/
-    lib/
-        dom/
-            attributes.js
-            classes.js
-            core.js
-            ...
-        util/
-            Array.js
-            core.js
-            Object.js
-            ...
-        dom.js
-        util.js
-    modules/
-        MiniBasket/
-            ...
-        Search/
-            ...
-        MiniBasket.js
-        Search.js
-    pages/
-        homepage.js
-        checkout.js
-        ...</pre>
+        <div class="js-timer">
+            <span class="js-timer-hours">0</span>:<span class="js-timer-minutes">0</span>:<span class="js-timer-seconds">0</span>.<span class="js-timer-milliseconds">0</span>
+        </div>
+
+        <ul>
+            <li><button type="button" class="js-timer-start">Start</button></li>
+            <li><button type="button" class="js-timer-pause">Pause</button></li>
+            <li><button type="button" class="js-timer-reset">Reset</button></li>
+            <li><button type="button" class="js-timer-stop">Stop</button></li>
+        </ul>
+
+        <script>require(["modules/Timer"], function (Timer) { new Timer(); });</script>
 
     </section>
 
     <section class="slide">
 
-        <pre><code>// modules/Search.js
-define([
-    "modules/Search/config",
-    "modules/Search/Async"
+        <p>Careful planning massively helps any modular code. Here's the folder structure that I used for the (massively over-engineered) timer. It's all inside the "timer" folder in <a href="https://github.com/james-jlo-long/JavaScript-Club/tree/master/06%20RequireJS/timer">the repo</a> if you want to see it youtself.</p>
+
+        <pre>lib/
+    util/
+        Array.js
+        core.js
+        Number.js
+        Object.js
+        String.js
+    dom.js
+    events.js
+    util.js
+modules/
+    Timer/
+        config.js
+        Counter.js
+        Date.js
+        Interval.js
+        Render.js
+    Timer.js
+require.js
+setup.js
+website.js</pre>
+
+        <div class="slide">
+
+            <p>This leave a lot of room for expansion. If this were a real website, there would be a <code>lib/dom</code> folder breaking <code>lib/dom.js</code> into separate files for better maintenance. There would also be a <code>pages</code> folder that would bring in all the <code>modules</code> that each page would need, leaving the code for the page just looking like this:</p>
+
+            <pre><code>require(["pages/home"], function (page) {
+    page.start();
+});</code></pre>
+
+        </div>
+
+    </section>
+
+    <section class="slide">
+
+        <p><code>Timer.js</code> brings in all the dependencies and ties them together.</p>
+
+        <pre><code>define([
+    "website",
+    "modules/Timer/config",
+    "modules/Timer/Render",
+    "modules/Timer/Interval",
+    "modules/Timer/Counter",
+    "modules/Timer/Date"
 ], function (
+    website,
     config,
-    Async
+    Render,
+    Interval,
+    Counter,
+    Date
 ) {
 
     "use strict";
 
-    var Search = function () {
+    var dom = website.dom;
 
-        this.async = new Async();
-        this.render = this.renderResults.bind(this);
+    var Timer = function () {
 
-        this.findElements();
+        this.setObjects();
         this.addHandlers();
 
     };
 
-    Search.prototype = {
+    Timer.prototype = {
 
-        lookupText: function (value) {
+        setObjects: function () {
 
-            this.async
-                .get(value, config.urls.search)
-                .then(this.render);
+            var base = dom.byQuery(config.selectors.base);
 
-        },
+            this.render = new Render(base);
+            this.interval = new Interval();
+            this.counter = new Counter();
 
-        renderResults: function (results) {
-
-            var markup = results
-                .map(this.drawResult, this)
-                .join("");
-
-            this.list.innerHtml = markup;
-
-        },
+        }
 
         // ...
 
     };
 
-    return Search;
+    return Timer;
 
 });</code></pre>
 
@@ -863,32 +892,122 @@ define([
 
     <section class="slide">
 
-        <pre><code>// pages/homepage.js
-define([
-    "modules/Search",
-    "modules/MiniBasket"
+        <p><code>Timer.js</code> is the only one that knows about the dependencies.</p>
+
+        <pre><code>Timer.prototype.addHandlers = function () {
+
+    var events = website.events;
+    var dom = website.dom;
+    var selectors = config.selectors;
+    var counter = this.counter;
+
+    dom.onByQuery(selectors.start, "click", counter.start, counter);
+    dom.onByQuery(selectors.pause, "click", counter.pause, counter);
+    dom.onByQuery(selectors.reset, "click", counter.reset, counter);
+    dom.onByQuery(selectors.stop, "click", counter.stop, counter);
+
+    events.listen(Counter.EVENT_UPDATE, function (e) {
+        this.update(e.detail);
+    }, this);
+
+    events.listen(Counter.EVENT_START, function (e) {
+        this.interval.start();
+    }, this);
+
+    events.listen(Counter.EVENT_PAUSE, function (e) {
+        this.interval.stop();
+    }, this);
+
+    events.listen(Interval.EVENT_TICK, function (e) {
+        this.counter.tick(e.detail);
+    }, this);
+
+};
+
+Timer.prototype.update = function (timestamp) {
+
+    var date = new Date(timestamp);
+
+    this.render.display({
+        hours: date.getUTCHours(),
+        minutes: date.getMinutes(),
+        seconds: date.getSeconds()
+    });
+
+};</code></pre>
+
+    </section>
+
+    <section class="slide">
+
+        <p>The other modules know about <code>website</code> (and they're allowed to know about <code>config</code>) but that's it - they know nothing about the other modules.</p>
+
+        <pre><code>define([
+    "website"
 ], function (
-    Search,
-    MiniBasket
+    website
 ) {
 
-    return {
+    "use strict";
+
+    var Interval = function () {
+    };
+
+    website.util.Object.addConstants(Interval, {
+        EVENT_TICK: "timer-interval-tick",
+        EVENT_STOP: "timer-interval-stop"
+    });
+
+    Interval.prototype = {
 
         start: function () {
 
-            this.search = new Search();
-            this.basket = new MiniBasket();
+            var that = this;
+            var events = website.events;
+
+            that.id = requestAnimationFrame(function (timestamp) {
+
+                events.trigger(Interval.EVENT_TICK, timestamp);
+                that.start();
+
+            });
 
         },
 
-        // ...
+        stop: function () {
+
+            cancelAnimationFrame(this.id);
+            delete this.id;
+            website.events.trigger(Interval.EVENT_STOP);
+
+        }
 
     };
 
+    return Interval;
+
 });</code></pre>
 
-        <pre><code>require(["pages/homepage"], function (page) {
-    page.start();
+    </section>
+
+    <section class="slide">
+
+        <p>To keep your code lines below 80 characters and to help avoid merge conflicts whenever you modify module dependencies, I recommend that your RequireJS boilerplate looks like this:</p>
+
+        <pre><code>define([
+    "dependency1",
+    "dependency2",
+    "dependency3"
+    // ...
+], function (
+    dependency1,
+    dependency2,
+    dependency3
+    // ...
+) {
+
+    "use strict";
+
 });</code></pre>
 
     </section>
