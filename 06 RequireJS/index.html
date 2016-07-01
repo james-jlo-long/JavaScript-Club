@@ -500,7 +500,7 @@ function require(names, callback) {
     return callback.apply(
         undefined,
         requests.map(function (module) {
-            return modules[name];
+            return modules[module];
         })
     );
 
